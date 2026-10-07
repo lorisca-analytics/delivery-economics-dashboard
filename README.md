@@ -47,17 +47,20 @@ Full write-up: [CASE-STUDY.md](CASE-STUDY.md).
 
 ## The dashboard flow
 
-Each view answers one question, in order:
+Nine sections, in the order the analysis was built:
 
 ```mermaid
 flowchart TD
-    A["KPI header<br/>Is the operation losing money?"] --> B["Daily operations<br/>Where does the crew's time go?"]
-    B --> C["Unit economics<br/>Which customers lose money?"]
-    C --> D["Pricing decision<br/>What should the fee be?"]
-    D --> E["Investment levers<br/>What changes the math?"]
-    E --> F["Settings<br/>Test your own assumptions"]
+    A["Executive Summary<br/>The loss and the answer"] --> B["Operations System<br/>How the day actually runs"]
+    B --> C["Modeling Approach<br/>Objective, sequence, constraints"]
+    C --> D["Optimization Results<br/>The 7-day schedule"]
+    D --> E["Route Visualization<br/>Clusters and daily routes"]
+    E --> F["Cost Analysis<br/>Where the money goes"]
+    F --> G["Scenario Comparison<br/>Three alternatives, verdicts"]
+    G --> H["Pricing Strategy<br/>Should fees change? Yes."]
+    H --> I["Interactive Tools<br/>Calculators on the same model"]
 ```
 
-Six views: KPI header (with the service standard as a fixed constraint), daily operations (7-day schedule + rescheduling policy), unit economics (per-customer P&L), pricing decision (live volume-pricing calculator), investment levers (the three scenarios), and a settings drawer where every assumption is editable and every figure recomputes live.
+Highlights: the **Operations System** section (system architecture, the three tools for sales/dispatch/driver, reschedule and no-show decision rules) sits right after the summary — it's the strongest idea. **Route Visualization** has a day-by-day route map with the truck's path drawn per day. **Scenario Comparison** carries editable inputs and a verdict table. **Interactive Tools** includes the pricing calculator, the 15-minute labor rounding calculator, and the disruption policy.
 
 Live demo: https://lorisca-analytics.github.io/delivery-economics-dashboard/
