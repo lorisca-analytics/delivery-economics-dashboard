@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Delivery Economics Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root { --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb; --accent:#1d4ed8; --red:#b91c1c; --green:#15803d; --bg:#f6f7f9; --card:#ffffff; }
+  * { box-sizing:border-box; }
+  body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; margin:0; background:var(--bg); color:var(--ink); }
+  header.top { background:#111827; color:#fff; padding:28px 32px 0; }
+  header.top h1 { margin:0 0 6px; font-size:24px; font-weight:700; }
+  header.top p { margin:0; color:#9ca3af; font-size:14px; }
+  .chip { display:inline-block; margin:12px 0 18px; background:#1f2937; border:1px solid #374151; color:#d1d5db; font-size:12px; padding:6px 12px; border-radius:999px; }
+  nav.tabs { display:flex; flex-wrap:wrap; gap:6px; padding:0 32px 16px; background:#111827; position:sticky; top:0; z-index:50; }
+  nav.tabs button { background:#1f2937; color:#d1d5db; border:1px solid #374151; border-radius:8px; padding:8px 14px; font-size:13px; cursor:pointer; }
+  nav.tabs button.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .wrap { max-width:1100px; margin:0 auto; padding:24px 20px 60px; }
+  section.card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:22px 24px; margin-bottom:20px; }
+  section.card h2 { margin:0 0 4px; font-size:18px; }
+  section.card .deck { margin:0 0 16px; color:var(--muted); font-size:14px; }
+  section.view { display:none; } section.view.active { display:block; }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:20px 0 0; }
+  .kpi { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 16px; text-align:center; }
+  .kpi .value { font-size:26px; font-weight:700; }
+  .kpi .label { font-size:12px; color:var(--muted); margin-top:4px; }
+  .neg { color:var(--red); } .pos { color:var(--green); }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th, td { text-align:left; padding:9px 10px; border-bottom:1px solid var(--line); }
+  th { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); font-weight:600; }
+  tr:last-child td { border-bottom:none; }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  td.c, th.c { text-align:center; }
+  .chartbox { position:relative; height:260px; margin-top:8px; }
+  .badge { display:inline-block; font-size:11px; font-weight:700; padding:3px 10px; border-radius:999px; color:#fff; }
+  .b-red { background:#dc2626; } .b-yel { background:#d97706; } .b-grn { background:#16a34a; } .b-gry { background:#9ca3af; } .b-blu { background:#1d4ed8; }
+  .verdict { display:inline-block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; padding:3px 10px; border-radius:999px; margin-top:8px; }
+  .verdict.no { background:#fee2e2; color:var(--red); } .verdict.yes { background:#dcfce7; color:var(--green); } .verdict.maybe { background:#fef3c7; color:#b45309; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; } @media(max-width:800px){ .grid2{grid-template-columns:1fr;} }
+  .grid3 { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; }
+  .step { background:#f9fafb; border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:8px; padding:14px 16px; }
+  .step h4 { margin:0 0 6px; font-size:14px; } .step p { margin:0; font-size:13px; color:var(--muted); }
+  .callout { border-radius:10px; padding:14px 16px; font-size:14px; margin-bottom:16px; }
+  .callout.blue { background:#eff6ff; border:1px solid #bfdbfe; }
+  .callout.amber { background:#fffbeb; border-left:4px solid #f59e0b; }
+  .callout.red { background:#fef2f2; border:1px solid #fecaca; }
+  .callout.green { background:#f0fdf4; border:1px solid #bbf7d0; }
+  .rowline { display:flex; justify-content:space-between; padding:12px 14px; border-radius:10px; margin-bottom:8px; font-size:14px; }
+  .field label { display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
+  .field input, .field select { width:100%; padding:10px 12px; font-size:15px; border:1px solid var(--line); border-radius:8px; }
+  .inputgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; }
+  .inbox { background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:12px 14px; }
+  .btn { background:var(--accent); color:#fff; border:none; border-radius:8px; padding:8px 16px; font-size:13px; cursor:pointer; }
+  .btn.ghost { background:#f3f4f6; color:var(--ink); border:1px solid var(--line); }
+  .daybtns { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+  .daybtns .btn.active { background:var(--accent); color:#fff; }
+  pre.arch { background:#111827; color:#4ade80; padding:16px; border-radius:10px; font-size:12px; overflow-x:auto; line-height:1.5; }
+  footer { color:var(--muted); font-size:12px; margin-top:28px; line-height:1.6; }
+  .note { font-size:12px; color:var(--muted); margin-top:10px; }
+  .legend { display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; font-size:12px; color:var(--muted); }
+</style>
+</head>
+<body>
+<header class="top">
+  <div style="max-width:1100px;margin:0 auto;padding:0 32px"><a href="index.html" style="color:#9ca3af;font-size:13px;text-decoration:none">← Overview</a></div>
+  <div style="height:18px"></div>
+  <h1>Delivery Economics Dashboard</h1>
+  <p style="color:#fff;font-size:16px;font-weight:600;margin:8px 0 0">A white-glove delivery operation losing $1,156 on 13 orders — and the fix isn't routing, it's pricing.</p>
+  <p>White-glove furniture delivery · 13 customers · Bay Area · a national luxury furniture retailer</p>
+  <span class="chip">Service standard is fixed: no split orders · full install + staging + cleanup</span>
+</header>
+<nav class="tabs" id="tabs"></nav>
+<div class="wrap">
+<!-- 1. EXECUTIVE SUMMARY -->
+<section class="view card active" id="v-executive">
+  <h2>Executive Summary</h2>
+  <p class="deck">The operation, the loss, and the answer — in one screen.</p>
+  <div class="callout red"><strong>The finding:</strong> this is a <strong>pricing problem, not a routing problem</strong>. Labor is <span id="exLaborPct">92</span>% of cost and happens inside customers' homes, where routing can't touch it. A 20% routing improvement saves <span id="exRoutingSave">$96</span> against a <span id="exLoss">$1,156</span> loss.</div>
+  <div class="kpis">
+    <div class="kpi"><div class="value">26,369</div><div class="label">cu ft delivered</div></div>
+    <div class="kpi"><div class="value">21</div><div class="label">truckloads</div></div>
+    <div class="kpi"><div class="value">7</div><div class="label">working days</div></div>
+    <div class="kpi"><div class="value">396</div><div class="label">miles</div></div>
+    <div class="kpi"><div class="value">74%</div><div class="label">avg utilization</div></div>
+    <div class="kpi"><div class="value neg" id="exNet">−$1,156</div><div class="label">net on the book</div></div>
+  </div>
+  <div class="grid3" style="margin-top:16px">
+    <div class="step"><h4>What was asked</h4><p>Optimize routes, truck loading, and the daily schedule for 13 customers — then answer whether flat-rate delivery fees should change, by how much, and why.</p></div>
+    <div class="step"><h4>What the numbers say</h4><p id="exNums">$6,043 in cost against $4,887 in fees. Eight of thirteen customers lose money; the five smallest orders subsidize the rest.</p></div>
+    <div class="step"><h4>The recommendation</h4><p>Volume-based pricing at $150 + $0.25/cu ft — or +$88.94 per delivery on flat fees. Bigger truck as the capital lever: it flips the loss into a $508 profit.</p></div>
+  </div>
+</section>
+
+<!-- 2. MODELING APPROACH -->
+<section class="view card" id="v-approach">
+  <h2>Modeling Approach</h2>
+  <p class="deck">How the optimization was structured — and what was deliberately not optimized.</p>
+  <div class="callout blue"><strong>Primary objective: minimize total cost.</strong> <span id="apObj">Labor is 92% of cost; fuel is 8%. Optimizing routes affects only the 8%. Therefore the model prioritized <strong>minimizing working days</strong> over minimizing miles.</span></div>
+  <h3 style="font-size:15px;margin:0 0 10px">Sequencing decisions</h3>
+  <div class="grid3" style="margin-bottom:16px">
+    <div class="step"><h4>1 · Geographic clustering</h4><p>Group customers by proximity to minimize travel between stops — six Bay Area clusters around the SF SOMA warehouse.</p></div>
+    <div class="step"><h4>2 · Load packing</h4><p>Bin-pack orders into the 1,700 cu ft truck without splitting any customer's order across loads.</p></div>
+    <div class="step"><h4>3 · Day assignment</h4><p>Assign loads to days inside the 540-minute (9-hour) work window, keeping 3 loads per day.</p></div>
+  </div>
+  <div class="callout amber"><strong>Trade-off accepted:</strong> 74% average utilization rather than 100% — forcing perfect packing would split customer orders across days, degrading the white-glove experience and adding labor cost.</div>
+  <h3 style="font-size:15px;margin:0 0 10px">Constraint hierarchy</h3>
+  <table>
+    <thead><tr><th>Constraint</th><th>Value</th><th class="c">Binding?</th><th>Impact</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Daily work window</strong></td><td>540 min (9 hrs)</td><td class="c"><span class="badge b-red">YES</span></td><td>Limits loads to 3 per day</td></tr>
+      <tr><td><strong>Truck volume</strong></td><td>1,700 cu ft</td><td class="c"><span class="badge b-red">YES</span></td><td>Requires 21 loads for 26,369 cu ft</td></tr>
+      <tr><td>Truck weight</td><td>7,000 lbs</td><td class="c"><span class="badge b-gry">NO</span></td><td>Volume fills first in most loads</td></tr>
+      <tr><td>Operating days</td><td>Tue–Sat</td><td class="c"><span class="badge b-gry">NO</span></td><td>7 working days span two weeks</td></tr>
+      <tr><td>Service standard</td><td>White glove, fixed</td><td class="c"><span class="badge b-red">YES</span></td><td>No split orders, no rushed crews — rules out cost-only moves</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 3. OPTIMIZATION RESULTS -->
+<section class="view card" id="v-results">
+  <h2>Optimization Results</h2>
+  <p class="deck">The 7-day schedule: 21 loads, every day inside the work window.</p>
+  <div class="kpis" style="margin-top:0">
+    <div class="kpi"><div class="value">26,369</div><div class="label">cu ft · total volume</div></div>
+    <div class="kpi"><div class="value">21</div><div class="label">truckloads</div></div>
+    <div class="kpi"><div class="value">7</div><div class="label">working days</div></div>
+    <div class="kpi"><div class="value">74%</div><div class="label">avg utilization</div></div>
+  </div>
+  <h3 style="font-size:15px;margin:18px 0 10px">Daily delivery schedule</h3>
+  <table id="schedTable">
+    <thead><tr><th class="c">Day</th><th>Loads</th><th class="num">Travel</th><th class="num">Service</th><th class="num">Total</th><th class="num">Miles</th><th class="num">Buffer</th><th class="c">Status</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <div class="chartbox"><canvas id="chDays"></canvas></div>
+  <div class="grid3" style="margin-top:14px">
+    <div class="callout green" style="margin:0"><strong>Buffer &gt; 60 min</strong><br>Can absorb a same-day reschedule</div>
+    <div class="callout amber" style="margin:0"><strong>Buffer 30–60 min</strong><br>Tight but manageable</div>
+    <div class="callout red" style="margin:0"><strong>Buffer &lt; 30 min</strong><br>Risk of overtime if disrupted</div>
+  </div>
+  <p class="note">Buffer = 540-minute window minus scheduled travel + service. Days 1–3 run tight — they carry the reschedule risk.</p>
+</section>
+<!-- 4. ROUTE VISUALIZATION -->
+<section class="view card" id="v-routes">
+  <h2>Route Visualization</h2>
+  <p class="deck">Six geographic clusters around the SF SOMA warehouse. Select a day to see its route; same-day stops stay inside one cluster.</p>
+  <div class="daybtns" id="dayBtns"></div>
+  <div class="grid2">
+    <div>
+      <div class="chartbox" style="height:380px"><canvas id="chMap"></canvas></div>
+      <div class="legend" id="mapLegend"></div>
+    </div>
+    <div>
+      <h3 style="font-size:15px;margin:0 0 10px">Geographic clusters</h3>
+      <div id="clusters" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
+      <h3 style="font-size:15px;margin:0 0 6px">Customer volumes</h3>
+      <div class="chartbox" style="height:300px"><canvas id="chVol"></canvas></div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. COST ANALYSIS -->
+<section class="view card" id="v-cost">
+  <h2>Cost Analysis</h2>
+  <p class="deck">Where the money goes — and what the flat fees cover.</p>
+  <div class="grid2">
+    <div>
+      <h3 style="font-size:15px;margin:0 0 6px">Cost structure</h3>
+      <div class="chartbox" style="height:240px"><canvas id="chSplit"></canvas></div>
+      <div id="costRows" style="margin-top:12px"></div>
+    </div>
+    <div>
+      <h3 style="font-size:15px;margin:0 0 6px">Revenue &amp; profit</h3>
+      <div id="revRows"></div>
+    </div>
+  </div>
+  <h3 style="font-size:15px;margin:18px 0 10px">Adjust parameters</h3>
+  <div class="inputgrid">
+    <div class="inbox field"><label>Crew rate ($/hr, fully loaded)</label><input type="number" id="inRate" value="104" step="0.5" oninput="recompute()"></div>
+    <div class="inbox field"><label>Cost per mile ($)</label><input type="number" id="inMile" value="1.21" step="0.01" oninput="recompute()"></div>
+    <div class="inbox field"><label>Local flat fee ($)</label><input type="number" id="inLocal" value="299" step="1" oninput="recompute()"></div>
+    <div class="inbox field"><label>Extended flat fee ($)</label><input type="number" id="inExt" value="399" step="1" oninput="recompute()"></div>
+    <div class="inbox field"><label>Labor hours (verified)</label><input type="number" id="inHours" value="53.5" step="0.1" oninput="recompute()"></div>
+    <div class="inbox field"><label>Miles (verified)</label><input type="number" id="inMiles" value="396" step="1" oninput="recompute()"></div>
+  </div>
+  <p class="note">Defaults are the case-documented values. Every figure on this page recomputes live.</p>
+</section>
+
+<!-- 6. SCENARIO COMPARISON -->
+<section class="view card" id="v-scenarios">
+  <h2>Scenario Comparison</h2>
+  <p class="deck">Three alternatives tested against the base case — tune the inputs and watch the verdicts move.</p>
+  <div class="chartbox" style="height:280px"><canvas id="chScen"></canvas></div>
+  <div class="inputgrid" style="margin:14px 0">
+    <div class="inbox field"><label>Speed: number of trucks</label><input type="number" id="inTrucks" value="2" min="1" max="5" oninput="recompute()"></div>
+    <div class="inbox field"><label>Luxury: loads per day</label><input type="number" id="inLuxLoads" value="2" min="1" max="3" oninput="recompute()"></div>
+    <div class="inbox field"><label>Capacity: new truck (cu ft)</label><input type="number" id="inNewCap" value="2000" min="1700" max="3000" step="100" oninput="recompute()"></div>
+  </div>
+  <table id="scenTable">
+    <thead><tr><th>Metric</th><th class="c">Base case</th><th class="c" id="thSpeed">Speed</th><th class="c" id="thLux">Luxury</th><th class="c" id="thCap">Capacity</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <p class="note">Speed: parallel crews, 10% coordination overhead per truck, 15% deadhead fuel per extra truck. Luxury: 7.5 hrs/day at premium pace. Capacity: fewer trips in a bigger truck.</p>
+</section>
+<!-- 7. PRICING STRATEGY -->
+<section class="view card" id="v-pricing">
+  <h2>Pricing Strategy</h2>
+  <p class="deck">Should flat-rate fees be reviewed?</p>
+  <div class="callout green" style="font-size:18px"><strong>Yes.</strong></div>
+  <div class="callout red"><strong>The problem with flat fees.</strong> <span id="prProblem">One customer ordered 3,970 cu ft requiring 3 loads; another ordered 276 cu ft. Both pay $399.</span> The fee ignores the cost driver.</div>
+  <div class="grid2" style="margin-bottom:16px">
+    <div class="step"><h4>Option A: flat increase</h4><p id="prOptA">+$88.94 per delivery to break even — local becomes $387.94, extended $487.94. Simple, but it doesn't address the volume disparity.</p></div>
+    <div class="step" style="border-left-color:var(--green)"><h4>Option B: volume-based <span class="badge b-grn">RECOMMENDED</span></h4><p><strong>$150 + $0.25/cu ft.</strong> A 276 cu ft order pays $219; a 3,970 cu ft order pays $1,143. Aligns price with actual delivery cost.</p></div>
+  </div>
+  <h3 style="font-size:15px;margin:0 0 10px">Impact on actual customers</h3>
+  <table id="priceTable">
+    <thead><tr><th>Customer</th><th class="num">Volume</th><th class="c">Zone</th><th class="num">Current</th><th class="num">Proposed</th><th class="num">Change</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</section>
+
+<!-- 8. OPERATIONS SYSTEM (overview — full design at operations.html) -->
+<section class="view card" id="v-operations">
+  <h2>Operations System</h2>
+  <p class="deck">The spreadsheet plans the week. Running the day takes a system — for the dispatcher, the salesperson, and the driver.</p>
+  <div class="callout amber"><strong>The gap:</strong> Excel handles <strong>weekly planning</strong>. Daily operations need <strong>real-time decision systems</strong> for customer reschedules, traffic delays, no-shows, and instant quotes.</div>
+  <h3 style="font-size:15px;margin:0 0 8px">System architecture</h3>
+  <pre class="arch">+----------------------------------------------------------+
+|                  DELIVERY OPERATIONS                 |
++----------------------------------------------------------+
+|                                                          |
+|  +----------+      +----------+      +----------+        |
+|  | PLANNING |      | DISPATCH |      |  SALES   |        |
+|  | (weekly) |----->| (daily)  |<---->| (quote)  |        |
+|  +----------+      +----------+      +----------+        |
+|       |                 |                  |             |
+|       +-----------------+------------------+             |
+|                         |                                |
+|                         v                                |
+|  +--------------------------------------------------+    |
+|  | SHARED DATABASE                                  |    |
+|  | orders · truck GPS · buffer remaining            |    |
+|  | pricing rules · reschedule history               |    |
+|  +--------------------------------------------------+    |
++----------------------------------------------------------+</pre>
+  <h3 style="font-size:15px;margin:18px 0 8px">Three tools</h3>
+  <div class="grid3">
+    <div class="step"><h4>1 · Sales quoting tool</h4><p>iPad/POS plugin — salesperson enters cubic feet, gets the price instantly.</p><p style="font-family:monospace;color:var(--accent);font-weight:700;margin-top:8px">$150 + ($0.25 × volume)</p><p class="note">Surcharges: stairs +$50 · expedited +$150 · assembly +$100</p></div>
+    <div class="step"><h4>2 · Dispatch dashboard</h4><p>Live truck locations, buffer remaining per day, one-click reschedule, overtime alerts.</p><p class="note" style="margin-top:8px">Buffer signal: <strong class="pos">&gt;60 min</strong> · <strong style="color:#b45309">30–60</strong> · <strong class="neg">&lt;30</strong></p></div>
+    <div class="step"><h4>3 · Driver app</h4><p>Navigation plus three exception buttons — the driver taps, the system handles the logic.</p><p class="note" style="margin-top:8px">Traffic delay → ETAs update · No answer → wait timer starts · Reschedule → logged, new slot found</p></div>
+  </div>
+  <div class="callout blue" style="margin-top:18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+    <div><strong>Proposed Operational Design Flow</strong> — decision rules, the dispatch live view, the disruption playbook, the no-show live scenario, the cost-impact calculator, and the implementation roadmap.</div>
+    <a href="operations.html" class="btn" style="text-decoration:none;white-space:nowrap">Open the full design →</a>
+  </div>
+</section>
+<!-- 9. INTERACTIVE TOOLS -->
+<section class="view card" id="v-tools">
+  <h2>Interactive Tools</h2>
+  <p class="deck">Working calculators built on the same cost model.</p>
+  <div class="grid2">
+    <div>
+      <h3 style="font-size:15px;margin:0 0 10px">Pricing calculator</h3>
+      <div class="inputgrid" style="margin-bottom:12px">
+        <div class="inbox field"><label>Base fee ($)</label><input type="number" id="tBase" value="150" oninput="recompute()"></div>
+        <div class="inbox field"><label>Per cu ft ($)</label><input type="number" id="tPer" value="0.25" step="0.01" oninput="recompute()"></div>
+        <div class="inbox field"><label>Order volume (cu ft)</label><input type="number" id="tVol" value="1500" oninput="recompute()"></div>
+      </div>
+      <div class="grid3">
+        <div class="kpi"><div class="value" id="tCur" style="font-size:22px">–</div><div class="label">Current flat fee</div></div>
+        <div class="kpi"><div class="value pos" id="tNew" style="font-size:22px">–</div><div class="label">Proposed price</div></div>
+        <div class="kpi"><div class="value" id="tDiff" style="font-size:22px">–</div><div class="label">Difference</div></div>
+      </div>
+    </div>
+    <div>
+      <h3 style="font-size:15px;margin:0 0 10px">Labor rounding calculator</h3>
+      <div class="inbox field" style="margin-bottom:12px"><label>Minutes worked</label><input type="number" id="tMin" value="46" oninput="recompute()"></div>
+      <div class="grid3">
+        <div class="kpi"><div class="value" id="tHrs" style="font-size:22px">–</div><div class="label">Rounded hours</div></div>
+        <div class="kpi"><div class="value" id="tBill" style="font-size:22px">–</div><div class="label">Billable cost</div></div>
+      </div>
+      <p class="note"><strong>Rule:</strong> 15-minute increments, round up at 7+ minutes. Rate: <span id="tRate">$104</span>/hr.</p>
+      <h3 style="font-size:15px;margin:16px 0 10px">Disruption policy</h3>
+      <div class="inbox field" style="margin-bottom:10px;max-width:240px"><label>Concierge reschedule fee ($)</label><input type="number" id="tFee" value="75" oninput="recompute()"></div>
+      <div style="font-size:14px">
+        <p>· 1st reschedule: <strong class="pos">free</strong></p>
+        <p>· 2nd+ reschedule: <strong id="tFee2">$75 concierge fee</strong></p>
+        <p>· No-show: <strong id="tFee3">$75 fee</strong> + next available window</p>
+        <p class="note">Wasted trip cost: <span id="tWaste">$208</span> (2 hrs × crew rate) — the fee covers a third of it; the rest is the price of the promise.</p>
+      </div>
+    </div>
+  </div>
+  <div style="background:#111827;color:#fff;border-radius:12px;padding:20px 22px;margin-top:18px">
+    <h3 style="margin:0 0 12px;font-size:15px;color:#93c5fd">Key numbers</h3>
+    <div class="grid2" style="font-size:14px">
+      <div>
+        <p>Total cost: <strong id="kCost">$6,043</strong> · Labor <strong id="kLaborPct">92%</strong> (<span id="kLabor">$5,564</span>) · Fuel <strong id="kFuelPct">8%</strong> (<span id="kFuel">$479</span>)</p>
+        <p>Loads: <strong>21</strong> · Days: <strong>7</strong> · Miles: <strong>396</strong> · Utilization: <strong>74%</strong></p>
+      </div>
+      <div>
+        <p style="font-style:italic">"This is a pricing problem, not a routing problem."</p>
+        <p style="font-style:italic">"Delivery is a cost center, not a profit center — at current prices."</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  Built from 171 order lines across 13 customers, a 45-SKU item master, and case-documented operating parameters.
+  Crew rate restated at $104/hr (driver premium + benefits, per the case). Distances estimated at 25 mph, no traffic modeling.
+  Anonymized: no company, instructor, or customer names.
+  Repo: <a href="https://github.com/lorisca-analytics/delivery-economics-dashboard" style="color:var(--accent)">github.com/lorisca-analytics/delivery-economics-dashboard</a> ·
+  Case study: <a href="https://github.com/lorisca-analytics/delivery-economics-dashboard/blob/main/CASE-STUDY.md" style="color:var(--accent)"><em>Pricing, Not Routing</em></a> ·
+  Every number reproduces via <span style="font-family:monospace">analysis/recompute.py</span>.
+</footer>
+</div>
+<script>
+const TABS = [
+  ["executive","Executive Summary"],["operations","Operations System"],["approach","Modeling Approach"],
+  ["results","Optimization Results"],["routes","Route Visualization"],["cost","Cost Analysis"],
+  ["scenarios","Scenario Comparison"],["pricing","Pricing Strategy"],["tools","Interactive Tools"]
+];
+const CUSTOMERS = [
+  ["CUST3301",3969.9,"Extended"],["CUST6536",3669.2,"Extended"],["CUST6699",3286.7,"Extended"],
+  ["CUST6446",2228.5,"Local"],["CUST1699",2198.4,"Local"],["CUST7026",2443.2,"Extended"],
+  ["CUST1946",2282.5,"Extended"],["CUST9189",1990.5,"Extended"],["CUST9119",1481.7,"Extended"],
+  ["CUST2424",1304.7,"Extended"],["CUST4928",831.5,"Local"],["CUST7395",405.7,"Extended"],["CUST2508",276.3,"Extended"]
+];
+const DAYS = [
+  [1,"Tue","7, 13, 15",141,396,537,58.6,3,["CUST2424","CUST2508","CUST1946","CUST7395","CUST6446"]],
+  [2,"Wed","3, 19, 21",169,348,517,70.6,23,["CUST9119","CUST9189","CUST4928"]],
+  [3,"Thu","1, 14, 20",189,341,530,78.6,10,["CUST6699","CUST1946","CUST9189"]],
+  [4,"Fri","2, 4, 5",141,352,493,58.8,47,["CUST6699","CUST3301"]],
+  [5,"Sat","6, 11, 8",135,306,441,69.0,99,["CUST3301","CUST7026","CUST6536"]],
+  [6,"Tue","12, 9, 16",125,310,435,69.0,105,["CUST7026","CUST6536","CUST6446"]],
+  [7,"Wed","10, 17, 18",96,345,441,34.0,99,["CUST6536","CUST1699"]]
+];
+const GEO = [
+  ["Warehouse",37.7599,-122.3894,"Hub","#111827"],
+  ["CUST1699",37.7897,-122.3972,"SF Core","#4472C4"],["CUST4928",37.7925,-122.4382,"SF Core","#4472C4"],["CUST6446",37.7930,-122.4161,"SF Core","#4472C4"],
+  ["CUST3301",37.8591,-122.4853,"Sausalito","#ED7D31"],["CUST6699",37.8594,-122.4815,"Sausalito","#ED7D31"],
+  ["CUST2424",37.8716,-122.2727,"Berkeley","#70AD47"],["CUST7026",37.8759,-122.2598,"Berkeley","#70AD47"],["CUST9119",37.8800,-122.2622,"Berkeley","#70AD47"],
+  ["CUST1946",37.7652,-122.2416,"Alameda","#FFC000"],["CUST2508",37.7712,-122.2824,"Alameda","#FFC000"],
+  ["CUST7395",37.7249,-122.1561,"San Leandro","#9E480E"],["CUST9189",37.7205,-122.1608,"San Leandro","#9E480E"],
+  ["CUST6536",37.6547,-122.4077,"South SF","#7030A0"]
+];
+const CLUSTERS = [
+  ["SF Core",3,"3.3 mi","#4472C4"],["Sausalito",2,"9.8 mi","#ED7D31"],["Berkeley",3,"14.2 mi","#70AD47"],
+  ["Alameda",2,"11.8 mi","#FFC000"],["San Leandro",2,"17.8 mi","#9E480E"],["South SF",1,"5.5 mi","#7030A0"]
+];
+const TOTAL_VOL = 26368.86, N_LOCAL = 3, N_EXT = 10, TOTAL_LOADS = 21;
+const fmt = n => "$" + Math.round(n).toLocaleString("en-US");
+const sgn = v => (v<0?"−$":"+$")+Math.round(Math.abs(v)).toLocaleString();
+let S = {}, selDay = 1;
+let charts = {};
+
+function showTab(id){
+  TABS.forEach(t=>{
+    document.getElementById("v-"+t[0]).classList.toggle("active", t[0]===id);
+  });
+  document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("active", b.dataset.tab===id));
+  if(id==="routes") drawMap();
+  window.scrollTo({top:0});
+}
+
+function recompute(){
+  const g = id => +document.getElementById(id).value || 0;
+  const rate = g("inRate")||104, mile = g("inMile")||1.21, local = g("inLocal")||299, ext = g("inExt")||399;
+  const hrs = g("inHours")||53.5, mi = g("inMiles")||396;
+  const labor = hrs*rate, fuel = mi*mile, cost = labor+fuel;
+  const rev = N_LOCAL*local + N_EXT*ext, pnl = rev-cost, margin = pnl/rev*100;
+  const laborPct = labor/cost*100, fuelPct = fuel/cost*100;
+  const inc = -pnl/13;
+  S = {rate,mile,local,ext,hrs,mi,labor,fuel,cost,rev,pnl,margin,laborPct,fuelPct,inc};
+
+  // Executive summary
+  document.getElementById("exLaborPct").textContent = Math.round(laborPct);
+  document.getElementById("exRoutingSave").textContent = fmt(fuel*0.2);
+  document.getElementById("exLoss").textContent = fmt(Math.abs(pnl));
+  const exNet = document.getElementById("exNet");
+  exNet.textContent = (pnl<0?"−":"+")+fmt(Math.abs(pnl)).slice(0);
+  exNet.textContent = (pnl<0?"−$":"+$")+Math.round(Math.abs(pnl)).toLocaleString();
+  exNet.className = "value "+(pnl<0?"neg":"pos");
+  document.getElementById("exNums").textContent = fmt(cost)+" in cost against "+fmt(rev)+" in fees. "+CUSTOMERS.filter(c=>c[1]*(cost/TOTAL_VOL)>(c[2]==="Local"?local:ext)).length+" of thirteen customers lose money; the rest subsidize them.";
+
+  // Approach
+  document.getElementById("apObj").innerHTML = "Labor is "+Math.round(laborPct)+"% of cost; fuel is "+Math.round(fuelPct)+"%. Optimizing routes affects only the "+Math.round(fuelPct)+"%. Therefore the model prioritized <strong>minimizing working days</strong> over minimizing miles.";
+
+  // Results table
+  document.querySelector("#schedTable tbody").innerHTML = DAYS.map(d=>{
+    const buf = d[7], cls = buf<30?"b-red":buf<60?"b-yel":"b-grn", lbl = buf<30?"TIGHT":buf<60?"OK":"GOOD";
+    return `<tr><td class="c"><strong>${d[0]}</strong> <span style="color:var(--muted)">${d[1]}</span></td><td style="color:var(--muted)">${d[2]}</td><td class="num">${d[3]} min</td><td class="num">${d[4]} min</td><td class="num"><strong>${d[3]+d[4]} min</strong></td><td class="num">${d[6]}</td><td class="num">${buf} min</td><td class="c"><span class="badge ${cls}">${lbl}</span></td></tr>`;
+  }).join("");
+
+  // Cost analysis
+  document.getElementById("costRows").innerHTML =
+    row("Labor ("+hrs+" hrs × $"+rate+"/hr)", fmt(labor), "#eff6ff")+
+    row("Fuel ("+mi+" mi × $"+mile+"/mi)", fmt(fuel), "#fff7ed")+
+    `<div class="rowline" style="background:#f3f4f6;font-size:16px"><strong>Total cost</strong><strong>${fmt(cost)}</strong></div>`;
+  function row(l,v,bg){ return `<div class="rowline" style="background:${bg}"><span>${l}</span><strong>${v}</strong></div>`; }
+  document.getElementById("revRows").innerHTML =
+    `<div class="rowline" style="background:#f9fafb"><span>Local (${N_LOCAL} × $${local})</span><span style="font-family:monospace">${fmt(N_LOCAL*local)}</span></div>`+
+    `<div class="rowline" style="background:#f9fafb"><span>Extended (${N_EXT} × $${ext})</span><span style="font-family:monospace">${fmt(N_EXT*ext)}</span></div>`+
+    `<div class="rowline" style="background:#f0fdf4"><strong>Total revenue</strong><strong class="pos">${fmt(rev)}</strong></div>`+
+    `<div class="rowline" style="background:#f3f4f6"><strong>Total cost</strong><strong>${fmt(cost)}</strong></div>`+
+    `<div class="rowline" style="background:${pnl>=0?"#dcfce7":"#fee2e2"};font-size:18px"><strong>Profit / (loss)</strong><strong class="${pnl>=0?"pos":"neg"}">${sgn(pnl)}</strong></div>`+
+    `<div class="rowline" style="background:#f9fafb"><span>Margin</span><strong class="${margin>=0?"pos":"neg"}">${margin.toFixed(1)}%</strong></div>`;
+
+  // Scenarios
+  const trucks = Math.min(5,Math.max(1,Math.round(g("inTrucks")||2)));
+  const luxLoads = Math.min(3,Math.max(1,Math.round(g("inLuxLoads")||2)));
+  const newCap = Math.min(3000,Math.max(1700,g("inNewCap")||2000));
+  const spdDays = Math.ceil(TOTAL_LOADS/(trucks*2.7));
+  const spd = {days:spdDays, labor:spdDays*trucks*8*rate, fuel:fuel*(1+(trucks-1)*0.15), label:"Speed ("+trucks+" trucks)"};
+  const luxDays = Math.ceil(TOTAL_LOADS/luxLoads);
+  const lux = {days:luxDays, labor:luxDays*7.5*rate, fuel:fuel*1.05, label:"Luxury ("+luxLoads+"/day)"};
+  const capTrips = Math.ceil(TOTAL_VOL/newCap), capDays = Math.ceil(capTrips/3);
+  const cap = {days:capDays, labor:capDays*7.5*rate, fuel:fuel, label:"Capacity ("+newCap.toLocaleString()+" cu ft)"};
+  const base = {days:7, labor, fuel, label:"Base case"};
+  [[spd,"thSpeed"],[lux,"thLux"],[cap,"thCap"]].forEach(([s,th])=>{ s.total=s.labor+s.fuel; s.diff=s.total-cost; document.getElementById(th).textContent=s.label; });
+  base.total = cost;
+  const scenRows = [
+    ["Strategy","1 truck, minimize days","Parallel ops, faster completion","Premium pace, better experience","Fewer trips, bigger loads"],
+    ["Days",base.days,spd.days,lux.days,cap.days],
+    ["Labor hours",hrs.toFixed(1),(spd.labor/rate).toFixed(1),(lux.labor/rate).toFixed(1),(cap.labor/rate).toFixed(1)],
+    ["Labor cost",fmt(base.labor),fmt(spd.labor),fmt(lux.labor),fmt(cap.labor)],
+    ["Fuel cost",fmt(base.fuel),fmt(spd.fuel),fmt(lux.fuel),fmt(cap.fuel)],
+    ["TOTAL COST","<strong>"+fmt(base.total)+"</strong>","<strong>"+fmt(spd.total)+"</strong>","<strong>"+fmt(lux.total)+"</strong>","<strong>"+fmt(cap.total)+"</strong>"],
+    ["vs base","—",diffCell(spd.diff),diffCell(lux.diff),diffCell(cap.diff)],
+    ["VERDICT",'<span class="badge b-grn">CHOSEN</span>',verdict(spd.diff),verdict(lux.diff),verdict(cap.diff)]
+  ];
+  function diffCell(d){ return `<span class="${d>0?"neg":"pos"}" style="font-weight:700">${sgn(d)}</span>`; }
+  function verdict(d){ return d<=0?'<span class="badge b-grn">BETTER</span>':'<span class="badge b-red">REJECTED</span>'; }
+  document.querySelector("#scenTable tbody").innerHTML = scenRows.map((r,i)=>
+    `<tr${i===5?' style="background:#f0fdf4"':""}><td><strong>${r[0]}</strong></td>${r.slice(1).map(c=>`<td class="c">${c}</td>`).join("")}</tr>`).join("");
+  drawScen(base,spd,lux,cap);
+
+  // Pricing
+  document.getElementById("prProblem").textContent = "One customer ordered 3,970 cu ft requiring 3 loads; another ordered 276 cu ft. Both pay $"+ext+". The fee ignores the cost driver.";
+  document.getElementById("prOptA").textContent = "+$"+inc.toFixed(2)+" per delivery to break even — local becomes $"+(local+inc).toFixed(2)+", extended $"+(ext+inc).toFixed(2)+". Simple, but it doesn't address the volume disparity.";
+  document.querySelector("#priceTable tbody").innerHTML = [...CUSTOMERS].sort((a,b)=>b[1]-a[1]).map(c=>{
+    const cur = c[2]==="Local"?local:ext, prop = Math.round(150+0.25*c[1]), d = prop-cur;
+    return `<tr><td style="font-family:monospace">${c[0]}</td><td class="num">${c[1].toLocaleString()} cu ft</td><td class="c"><span class="badge ${c[2]==="Local"?"b-blu":"b-yel"}">${c[2]}</span></td><td class="num">$${cur}</td><td class="num"><strong>$${prop.toLocaleString()}</strong></td><td class="num ${d>=0?"pos":"neg"}" style="font-weight:700">${d>=0?"+":"−"}$${Math.abs(d).toLocaleString()}</td></tr>`;
+  }).join("");
+
+  // Tools
+  const tBase = g("tBase")||150, tPer = +document.getElementById("tPer").value||0.25, tVol = g("tVol");
+  const cur = ext, prop = tBase + tPer*tVol, d = prop-cur;
+  document.getElementById("tCur").textContent = fmt(cur);
+  document.getElementById("tNew").textContent = fmt(prop);
+  const tDiff = document.getElementById("tDiff");
+  tDiff.textContent = (d>=0?"+":"−")+"$"+Math.round(Math.abs(d)).toLocaleString();
+  tDiff.className = "value "+(d>=0?"pos":"neg");
+  const mins = g("tMin");
+  const rh = (Math.floor(mins/15)+(mins%15>=7?1:0))*0.25;
+  document.getElementById("tHrs").textContent = rh.toFixed(2);
+  document.getElementById("tBill").textContent = "$"+(rh*rate).toFixed(2);
+  document.getElementById("tRate").textContent = "$"+rate;
+  const fee = g("tFee")||75;
+  document.getElementById("tFee2").textContent = "$"+fee+" concierge fee";
+  document.getElementById("tFee3").textContent = "$"+fee+" fee";
+  document.getElementById("tWaste").textContent = "$"+Math.round(2*rate);
+
+  // Key numbers
+  document.getElementById("kCost").textContent = fmt(cost);
+  document.getElementById("kLaborPct").textContent = Math.round(laborPct)+"%";
+  document.getElementById("kLabor").textContent = fmt(labor);
+  document.getElementById("kFuelPct").textContent = Math.round(fuelPct)+"%";
+  document.getElementById("kFuel").textContent = fmt(fuel);
+
+  drawSplit(); drawDays(); drawVol();
+}
+
+let splitChart=null, daysChart=null, scenChart=null, volChart=null;
+function mkChart(id, cfg){
+  if(typeof Chart==="undefined") return;
+  if(charts[id]) charts[id].destroy();
+  charts[id] = new Chart(document.getElementById(id), cfg);
+}
+function drawSplit(){
+  mkChart("chSplit",{type:"doughnut",
+    data:{labels:["Labor ("+Math.round(S.laborPct)+"%)","Fuel ("+Math.round(S.fuelPct)+"%)"],
+    datasets:[{data:[S.labor,S.fuel],backgroundColor:["#1d4ed8","#93c5fd"]}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{position:"bottom"}}}});
+}
+function drawDays(){
+  mkChart("chDays",{type:"bar",
+    data:{labels:DAYS.map(d=>"Day "+d[0]),
+    datasets:[{label:"Travel min",data:DAYS.map(d=>d[3]),backgroundColor:"#93c5fd"},
+              {label:"Service min",data:DAYS.map(d=>d[4]),backgroundColor:"#1d4ed8"}]},
+    options:{maintainAspectRatio:false,scales:{x:{stacked:true},y:{stacked:true}},plugins:{legend:{position:"bottom"}}}});
+}
+function drawScen(base,spd,lux,cap){
+  const sc=[base,spd,lux,cap];
+  mkChart("chScen",{type:"bar",
+    data:{labels:sc.map(s=>s.label),
+    datasets:[{label:"Labor",data:sc.map(s=>s.labor),backgroundColor:"#1d4ed8"},
+              {label:"Fuel",data:sc.map(s=>s.fuel),backgroundColor:"#93c5fd"}]},
+    options:{maintainAspectRatio:false,indexAxis:"y",scales:{x:{stacked:true},y:{stacked:true}},
+      plugins:{legend:{position:"bottom"},
+        tooltip:{callbacks:{footer:items=>{const s=sc[items[0].dataIndex];return "Total "+fmt(s.total)+" ("+sgn(s.total-S.cost)+" vs base)";}}}}}});
+}
+function drawVol(){
+  const sorted=[...CUSTOMERS].sort((a,b)=>b[1]-a[1]);
+  mkChart("chVol",{type:"bar",
+    data:{labels:sorted.map(c=>c[0].replace("CUST","C")),
+    datasets:[{label:"cu ft",data:sorted.map(c=>c[1]),backgroundColor:sorted.map(c=>c[2]==="Local"?"#1d4ed8":"#f59e0b")}]},
+    options:{maintainAspectRatio:false,indexAxis:"y",plugins:{legend:{display:false}}}});
+}
+function drawMap(){
+  const cv=document.getElementById("chMap"); if(!cv) return;
+  const ctx=cv.getContext("2d");
+  const W=cv.parentElement.clientWidth, H=380, dpr=window.devicePixelRatio||1;
+  cv.width=W*dpr; cv.height=H*dpr; cv.style.width=W+"px"; cv.style.height=H+"px";
+  ctx.scale(dpr,dpr);
+  const lats=GEO.map(g=>g[1]), lngs=GEO.map(g=>g[2]), pad=40;
+  const x=lng=>pad+(lng-Math.min(...lngs))/(Math.max(...lngs)-Math.min(...lngs))*(W-2*pad);
+  const y=lat=>pad+(Math.max(...lats)-lat)/(Math.max(...lats)-Math.min(...lats))*(H-2*pad);
+  const LO={CUST3301:[10,-12],CUST6699:[10,16],CUST2424:[-8,-12],CUST7026:[-8,16],CUST9119:[10,2],CUST7395:[10,-12],CUST9189:[10,16],CUST2508:[10,-12],CUST1946:[10,4],CUST4928:[-34,4],CUST6446:[-8,-12],CUST1699:[10,4],CUST6536:[10,4]};
+  const route = DAYS.find(d=>d[0]===selDay)[8];
+  // route polyline
+  ctx.strokeStyle="#1d4ed8"; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.beginPath();
+  const pts=[GEO[0],...route.map(id=>GEO.find(g=>g[0]===id)),GEO[0]];
+  pts.forEach((g,i)=>{ const px=x(g[2]),py=y(g[1]); i?ctx.lineTo(px,py):ctx.moveTo(px,py); });
+  ctx.stroke(); ctx.setLineDash([]);
+  GEO.forEach(g=>{
+    const [name,lat,lng,cluster,color]=g, px=x(lng), py=y(lat);
+    const onRoute = cluster==="Hub" || route.includes(name);
+    ctx.globalAlpha = onRoute?1:0.25;
+    if(cluster==="Hub"){ ctx.fillStyle=color; ctx.fillRect(px-7,py-7,14,14);
+      ctx.fillStyle="#111827"; ctx.font="bold 11px sans-serif"; ctx.fillText("WAREHOUSE",px+10,py+4);
+    } else {
+      ctx.beginPath(); ctx.arc(px,py,onRoute?8:6,0,7); ctx.fillStyle=color; ctx.fill();
+      ctx.lineWidth=2; ctx.strokeStyle="#fff"; ctx.stroke();
+      if(onRoute){ ctx.fillStyle="#374151"; ctx.font="bold 11px sans-serif";
+        const o=LO[name]||[10,4]; ctx.fillText(name.replace("CUST","C"),px+o[0],py+o[1]); }
+    }
+    ctx.globalAlpha=1;
+  });
+  document.getElementById("mapLegend").innerHTML =
+    CLUSTERS.map(c=>`<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c[3]};margin-right:4px"></span>${c[0]}</span>`).join("");
+}
+
+(function init(){
+  document.getElementById("tabs").innerHTML = TABS.map(t=>
+    `<button data-tab="${t[0]}" class="${t[0]==="executive"?"active":""}" onclick="showTab('${t[0]}')">${t[1]}</button>`).join("");
+  document.getElementById("dayBtns").innerHTML = DAYS.map(d=>
+    `<button class="btn ${d[0]===1?"":"ghost"}" data-day="${d[0]}" onclick="selDay=${d[0]};document.querySelectorAll('#dayBtns .btn').forEach(b=>b.classList.toggle('ghost',+b.dataset.day!==${d[0]}));drawMap()">Day ${d[0]}</button>`).join("");
+  document.getElementById("clusters").innerHTML = CLUSTERS.map(c=>
+    `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f9fafb;border:1px solid var(--line);border-radius:8px"><span style="width:12px;height:12px;border-radius:50%;background:${c[3]}"></span><strong style="font-size:14px">${c[0]}</strong><span style="color:var(--muted);font-size:13px;margin-left:auto">${c[1]} customers · ${c[2]} avg from warehouse</span></div>`).join("");
+  recompute();
+  drawMap();
+  const deep = sessionStorage.getItem("tab");
+  if(deep && document.getElementById("v-"+deep)){ sessionStorage.removeItem("tab"); showTab(deep); }
+})();
+</script>
+</body>
+</html>
