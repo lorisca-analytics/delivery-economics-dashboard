@@ -4,13 +4,13 @@
 
 A national luxury furniture retailer offered white-glove delivery at a flat rate per order. This repo is the full business case: the analysis, the rebuild, and the dashboard a manager would actually use. Labor is 92% of the cost, the service standard is fixed, and a 20% routing improvement saves $96 against a $1,156 loss. The only levers big enough are price and policy.
 
-![KPI header](screenshots/kpis.png)
+![KPI header](screenshots/kpis.png?v=2)
 
 ## The case, SPIDER-style
 
-![SPIDER framework](docs/spider-framework.png)
+![SPIDER framework](docs/spider-framework.png?v=2)
 
-![Analysis path](docs/analysis-path.png)
+![Analysis path](docs/analysis-path.png?v=2)
 
 **S — Summary.** I was asked to optimize the operation: routes, truck loading, and the daily schedule for 13 Bay Area customers. I built the cost model from 171 raw order lines, optimized down to 7 days and 21 truckloads, and proved the loss is structural — then rebuilt the whole thing for publication with case-accurate numbers.
 
