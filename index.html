@@ -278,7 +278,7 @@
   <div style="background:#f9fafb;border:1px solid var(--line);border-radius:10px;padding:16px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <strong>Today: Day 1 · Truck 1 — active route</strong>
-      <span class="badge b-red">1 alert</span>
+      <span><span class="btn ghost" style="padding:4px 12px;font-size:12px;margin-right:6px">Refresh</span><span class="badge b-red">1 alert</span></span>
     </div>
     <table>
       <thead><tr><th class="c">Stop</th><th>Customer</th><th>ETA</th><th class="c">Status</th><th class="num">Volume</th><th>Action</th></tr></thead>
@@ -359,6 +359,8 @@
   </div>
 
   <h3 style="font-size:15px;margin:22px 0 8px">Cost impact calculator</h3>
+  <p class="deck">Live inputs — change the crew rate or cost per mile in Cost Analysis and watch these move.</p>
+  <div class="grid3" id="calcInputs" style="grid-template-columns:repeat(4,1fr);margin-bottom:12px"></div>
   <div class="grid2" id="costImpact"></div>
   <div class="callout blue" style="margin-top:12px" id="impactBottom"><strong>Bottom line:</strong> route-optimized rescheduling costs a few dollars. A standalone trip costs $244. That's why we match clusters, not just buffer.</div>
 
@@ -613,6 +615,9 @@ function recompute(){
       `<p>Regular rate: $${rate}/hr</p><p>OT rate: $${rate} × 1.5 = $${(rate*1.5).toFixed(2)}/hr</p><p>Incremental cost per OT hour: $${(rate*0.5).toFixed(2)}</p>`,
       "+$"+otHr+"/hr", "");
   document.getElementById("impactBottom").innerHTML = `<strong>Bottom line:</strong> route-optimized rescheduling costs <strong>+$${sameLo}–${sameHi}</strong>. A standalone trip costs <strong>+$${alone}</strong>. That's why we match clusters, not just buffer.`;
+  const inp = (l,v)=>`<div class="kpi" style="padding:10px"><div class="label">${l}</div><div class="value" style="font-size:18px;color:var(--accent)">${v}</div></div>`;
+  document.getElementById("calcInputs").innerHTML =
+    inp("Hourly rate","$"+rate)+inp("Cost / mile","$"+mile)+inp("OT multiplier","1.5×")+inp("Avg service time","1.5 hrs");
 
   drawSplit(); drawDays(); drawVol();
 }
