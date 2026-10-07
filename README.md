@@ -4,7 +4,7 @@
 
 A national luxury furniture retailer offered white-glove delivery at a flat rate per order. This dashboard is the business-facing view of the rebuild: the operation modeled end to end, the loss proven structural, and the decisions laid out. Labor is 92% of the cost, the service standard is fixed, and a 20% routing improvement saves $96 against a $1,156 loss. The only levers big enough are price and policy.
 
-Companion case study: [*Pricing, Not Routing*](../rh-delivery-economics-case-study.md) — the full write-up.
+Companion case study: [*Pricing, Not Routing*](CASE-STUDY.md) — the full SPIDER write-up (Summary, Problem, Inputs, Discovery, Execution, Results), in this repo.
 
 ![KPI header](screenshots/kpis.png)
 
@@ -47,6 +47,19 @@ flowchart LR
     D2 --> D3["Finding<br/>$1,156 loss · labor 92%"]
     D3 --> D4["Decision<br/>volume pricing + policy"]
 ```
+
+## Presented via SPIDER
+
+The portfolio method structures the work; the repo presents each part where it belongs:
+
+| SPIDER | Where it lives |
+|---|---|
+| **Summary** — the elevator pitch | Top of this README, and [CASE-STUDY.md](CASE-STUDY.md) §S |
+| **Problem** — why it matters, who has it | [CASE-STUDY.md](CASE-STUDY.md) §P — the white-glove promise as a fixed constraint |
+| **Inputs** — every data source | [CASE-STUDY.md](CASE-STUDY.md) §I |
+| **Discovery** — what the data showed, dead ends | [CASE-STUDY.md](CASE-STUDY.md) §D — including the three contradictions the audit caught |
+| **Execution** — methods, alternatives rejected | [CASE-STUDY.md](CASE-STUDY.md) §E + the dashboard's Investment levers |
+| **Results** — quantified findings, recommendations, limitations | The dashboard itself + [CASE-STUDY.md](CASE-STUDY.md) §R |
 
 ## The views
 
