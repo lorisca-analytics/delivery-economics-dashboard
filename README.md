@@ -1,12 +1,23 @@
-# Delivery Economics Dashboard
+# Delivery Economics
 
-**Live demo: https://lorisca-analytics.github.io/delivery-economics-dashboard/**
+![Losing $1,156 on 13 orders. Routing wasn't the fix.](docs/cover.svg)
 
-**A white-glove delivery operation losing $1,156 on 13 orders — and the fix isn't routing, it's pricing.**
+A white-glove delivery operation losing **$1,156 on 13 orders** — and the fix isn't routing, it's pricing. I rebuilt the whole case from 171 raw order lines: the cost model, the 7-day operating schedule, and the operating system that runs the day. The presentation, the dashboard, the operations design, and every number below are reproducible from the raw data.
 
-A national luxury furniture retailer offered white-glove delivery at a flat rate per order. This repo is the full business case: the analysis, the rebuild, and the dashboard a manager would actually use. Labor is 92% of the cost, the service standard is fixed, and a 20% routing improvement saves $96 against a $1,156 loss. The only levers big enough are price and policy.
+**Live:** [Presentation](https://lorisca-analytics.github.io/delivery-economics-dashboard/) · [Dashboard](https://lorisca-analytics.github.io/delivery-economics-dashboard/dashboard.html) · [Operations design](https://lorisca-analytics.github.io/delivery-economics-dashboard/operations.html)
 
-![KPI header](screenshots/kpis.png?v=2)
+## What's inside
+
+| Path | What it is |
+|---|---|
+| `index.html` | Presentation page — the case, the finding, the links |
+| `dashboard.html` | The 9-section analytical dashboard (open in any browser, no build step) |
+| `operations.html` | Proposed operational design flow — dispatch, driver app, decision rules |
+| `CASE-STUDY.md` | Full case study write-up |
+| `data/` | Raw inputs: 171 order lines, 45-SKU item master, customer addresses |
+| `analysis/recompute.py` | Reproduces every dashboard number from `data/` — run it |
+| `docs/` | Diagrams: cover, SPIDER framework, analysis path |
+| `screenshots/` | Dashboard visuals |
 
 ## The case, SPIDER-style
 
@@ -33,19 +44,9 @@ flowchart LR
     D3 --> D4["Decision<br/>volume pricing + policy"]
 ```
 
-**R — Results.** $6,043 cost vs $4,887 revenue: **−$1,156, −23.7% margin.** Eight of thirteen customers lose money; the five smallest subsidize the rest. Recommendations: volume-based pricing at $150 + $0.25/cu ft (or +$88.94 per delivery on flat fees), the concierge rescheduling policy for no-shows, and the bigger truck as the capital lever — it flips the loss into a $508 profit. Limitations: distances estimated at 25 mph, one truck modeled, rounding policy as stated not observed.
+**R — Results.** $6,043 cost vs $4,887 revenue: **−$1,156, −23.7% margin.** Eight of thirteen customers lose money; the five smallest subsidize the rest. Recommendations: volume-based pricing at $150 + $0.25/cu ft (or +$88.94 per delivery on flat fees), the concierge rescheduling policy for no-shows, and the bigger truck as the capital lever — it flips the loss into a $508 profit.
 
 Full write-up: [CASE-STUDY.md](CASE-STUDY.md).
-
-## What's in the repo
-
-| Path | What it is |
-|---|---|
-| `index.html` | The dashboard — open in any browser, no build step |
-| `CASE-STUDY.md` | Full SPIDER case study |
-| `data/` | Raw inputs: order lines, item master, customer addresses |
-| `analysis/recompute.py` | Reproduces every dashboard number from `data/` |
-| `screenshots/` | Dashboard visuals |
 
 ## The dashboard flow
 
@@ -63,4 +64,14 @@ flowchart TD
     H --> I["Interactive Tools<br/>Calculators on the same model"]
 ```
 
-Highlights: the **Operations System** section (system architecture, the three tools for sales/dispatch/driver, reschedule and no-show decision rules, the live no-show scenario, cost-impact calculator, implementation roadmap) sits right after the summary — it's the strongest idea. **Route Visualization** has a day-by-day route map with the truck's path drawn per day. **Scenario Comparison** carries editable inputs and a verdict table. **Interactive Tools** includes the pricing calculator, the 15-minute labor rounding calculator, and the disruption policy.
+Highlights: the **Operations System** section (system architecture, the three tools for sales/dispatch/driver, reschedule and no-show decision rules, the live no-show scenario, cost-impact calculator, implementation roadmap) sits right after the summary — it's the strongest idea, and it has its own page [here](https://lorisca-analytics.github.io/delivery-economics-dashboard/operations.html). **Route Visualization** has a day-by-day route map with the truck's path drawn per day. **Scenario Comparison** carries editable inputs and a verdict table. **Interactive Tools** includes the pricing calculator, the 15-minute labor rounding calculator, and the disruption policy.
+
+![KPI header](screenshots/kpis.png?v=2)
+
+## What this doesn't do
+
+- Distances are estimated at 25 mph from zone mapping, not measured drive times.
+- One truck is modeled; the two-truck alternative is costed as a scenario, not scheduled.
+- The 15-minute labor rounding policy is as stated in the case, not observed on the ground.
+- 13 customers is a one-week book of business — direction, not a full-year P&L.
+- Surcharges in the quoting tool ($50 stairs, $150 expedited, $100 assembly) are illustrative, from the original case model.
