@@ -8,6 +8,10 @@ A national luxury furniture retailer offered white-glove delivery at a flat rate
 
 ## The case, SPIDER-style
 
+![SPIDER framework](docs/spider-framework.png)
+
+![Analysis path](docs/analysis-path.png)
+
 **S — Summary.** I was asked to optimize the operation: routes, truck loading, and the daily schedule for 13 Bay Area customers. I built the cost model from 171 raw order lines, optimized down to 7 days and 21 truckloads, and proved the loss is structural — then rebuilt the whole thing for publication with case-accurate numbers.
 
 **P — Problem.** The flat-rate promise is a brand differentiator and a money loser: one customer pays $399 for 276 cubic feet, another pays $399 for 3,970. The white-glove standard is fixed — no split orders, no rushed crews, full install and staging — so cost-only optimization was never on the table. This is a workforce economics problem: a $104/hr three-person crew, 15-minute time rounding, 7 days of scheduled labor.
