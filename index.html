@@ -249,14 +249,129 @@
   <h3 style="font-size:15px;margin:18px 0 8px">Decision rules</h3>
   <div class="grid2">
     <div class="step"><h4>Reschedule logic</h4>
-      <p style="margin:8px 0">1st time → <strong class="pos">free</strong>, move to a day with &gt;60 min buffer</p>
-      <p style="margin:8px 0">2nd time → <strong>$75</strong>, move to a day with &gt;30 min buffer</p>
-      <p style="margin:8px 0 0">3rd+ time → <strong>$75</strong>, moved to the end of the queue</p></div>
+      <p style="margin:8px 0"><span class="badge b-grn">1st time → FREE</span></p>
+      <p style="margin:4px 0">→ Find a day with buffer &gt; 60 min</p>
+      <p style="margin:8px 0"><span class="badge b-yel">2nd time → $75</span></p>
+      <p style="margin:4px 0">→ Find a day with buffer &gt; 30 min</p>
+      <p style="margin:8px 0"><span class="badge b-red">3rd+ time → $75</span></p>
+      <p style="margin:4px 0 0">→ Moved to the end of the queue</p></div>
     <div class="step"><h4>No-show logic</h4>
-      <p style="margin:8px 0">Driver waits 15 min with no contact → marked no-show</p>
-      <p style="margin:8px 0">→ Rebooked to the next available window, <strong>$75</strong> trip fee</p>
-      <p style="margin:8px 0 0">→ Reschedule counter increments — the luxury framing holds, the cost is covered</p></div>
+      <p style="margin:8px 0"><strong>If driver waited ≥ 15 min and no contact:</strong></p>
+      <p style="margin:4px 0">→ Mark as no-show</p>
+      <p style="margin:4px 0">→ Charge $75 fee</p>
+      <p style="margin:4px 0">→ Log wasted trip: 2 hrs × crew rate</p>
+      <p style="margin:4px 0 0">→ Auto-reschedule to next available window</p></div>
+    <div class="step"><h4>Overtime prevention</h4>
+      <p style="margin:8px 0"><strong>If current time + remaining work &gt; 5:00 PM:</strong></p>
+      <p style="margin:4px 0">→ Alert dispatch</p>
+      <p style="margin:4px 0 0">→ Options: (a) skip last stop and reschedule · (b) authorize OT at 1.5× rate · (c) call customer, reduce scope</p></div>
+    <div class="step"><h4>Traffic delay cascade</h4>
+      <p style="margin:8px 0"><strong>When the driver taps "Traffic Delay":</strong></p>
+      <p style="margin:4px 0">1. Recalculate ETAs for all remaining stops</p>
+      <p style="margin:4px 0">2. Check if the new timeline passes 5 PM</p>
+      <p style="margin:4px 0">3. If yes → trigger overtime prevention</p>
+      <p style="margin:4px 0 0">4. Notify affected customers by SMS</p></div>
   </div>
+
+  <h3 style="font-size:15px;margin:22px 0 8px">Dispatch dashboard — live view</h3>
+  <div style="background:#f9fafb;border:1px solid var(--line);border-radius:10px;padding:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <strong>Today: Day 1 · Truck 1 — active route</strong>
+      <span class="badge b-red">1 alert</span>
+    </div>
+    <table>
+      <thead><tr><th class="c">Stop</th><th>Customer</th><th>ETA</th><th class="c">Status</th><th class="num">Volume</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr><td class="c">1</td><td style="font-family:monospace">CUST2424</td><td>9:30 AM</td><td class="c"><span class="badge b-grn">✓ Done</span></td><td class="num">1,305</td><td>—</td></tr>
+        <tr style="background:#eff6ff"><td class="c">2</td><td style="font-family:monospace">CUST2508</td><td>11:15 AM</td><td class="c"><span class="badge b-blu">En route</span></td><td class="num">276</td><td>—</td></tr>
+        <tr><td class="c">3</td><td style="font-family:monospace">CUST1946</td><td>1:30 PM</td><td class="c"><span class="badge b-gry">Pending</span></td><td class="num">2,282</td><td><span style="color:var(--accent);text-decoration:underline;font-size:12px">Reschedule</span></td></tr>
+        <tr><td class="c">4</td><td style="font-family:monospace">CUST7395</td><td>2:45 PM</td><td class="c"><span class="badge b-gry">Pending</span></td><td class="num">406</td><td><span style="color:var(--accent);text-decoration:underline;font-size:12px">Reschedule</span></td></tr>
+        <tr><td class="c">5</td><td style="font-family:monospace">CUST6446</td><td>4:00 PM</td><td class="c"><span class="badge b-gry">Pending</span></td><td class="num">2,229</td><td><span style="color:var(--accent);text-decoration:underline;font-size:12px">Reschedule</span></td></tr>
+      </tbody>
+    </table>
+    <div style="display:flex;justify-content:space-between;margin-top:12px;font-size:13px;flex-wrap:wrap;gap:8px">
+      <span>Buffer remaining: <strong style="color:#d97706">3 min</strong> <span style="color:#d97706">⚠ tight — no same-day adds</span></span>
+      <span style="color:var(--muted)">Miles: 24 / 59 completed</span>
+    </div>
+    <div class="callout red" style="margin:12px 0 0"><strong>Alert · 10:42 AM</strong> — CUST2508 requested a reschedule (1st time) → <span class="pos"><strong>moved to Day 7 (buffer: 99 min) ✓</strong></span></div>
+  </div>
+
+  <h3 style="font-size:15px;margin:22px 0 8px">Disruption management — buffer by day</h3>
+  <div class="grid3" id="bufferGrid" style="grid-template-columns:repeat(7,1fr)"></div>
+  <h3 style="font-size:15px;margin:18px 0 8px">Decision flow for disruption</h3>
+  <pre class="arch">DISRUPTION OCCURS (customer not home, traffic, access issue)
+                    |
+                    v
+         +----------------------+
+         |  Can we still        |
+         |  finish by 5 PM?     |
+         +----------+-----------+
+                    |
+           +-------+-------+
+           |               |
+          YES              NO
+           |               |
+           v               v
+       Continue     +---------------------+
+       route        |  Skip this stop     |
+                    |  Reschedule to      |
+                    |  SAME-CLUSTER day   |
+                    |  with buffer        |
+                    +----------+----------+
+                               |
+                               v
+                    +---------------------+
+                    |  Notify customer    |
+                    |  via SMS (auto)     |
+                    |  within 2 minutes   |
+                    +---------------------+</pre>
+
+  <h3 style="font-size:15px;margin:22px 0 8px">Live scenario — no-show on Day 1</h3>
+  <div class="callout blue"><strong>Situation:</strong> CUST1946 (Alameda, 2,282 cu ft) isn't home at 1:30 PM on Day 1. Buffer is only 3 minutes. The crew is already behind.</div>
+  <table style="margin-bottom:14px">
+    <thead><tr><th class="c">Step</th><th>Who</th><th>Action</th><th>Time</th></tr></thead>
+    <tbody>
+      <tr><td class="c"><strong>1</strong></td><td>Driver</td><td>Taps "No Answer" in the app, waits 15 min</td><td>1:30 PM</td></tr>
+      <tr><td class="c"><strong>2</strong></td><td>System</td><td>Starts timer, alerts dispatch</td><td>Auto</td></tr>
+      <tr><td class="c"><strong>3</strong></td><td>Driver</td><td>Taps "Customer Unreachable" after the wait</td><td>1:45 PM</td></tr>
+      <tr><td class="c"><strong>4</strong></td><td>Dispatch</td><td>Sees the alert, checks buffer days</td><td>1:46 PM</td></tr>
+      <tr><td class="c"><strong>5</strong></td><td>System</td><td class="pos"><strong>Auto-identifies Day 6 (105 min buffer)</strong></td><td>Auto</td></tr>
+      <tr><td class="c"><strong>6</strong></td><td>Dispatch</td><td>Confirms the reschedule with one click</td><td>1:47 PM</td></tr>
+      <tr><td class="c"><strong>7</strong></td><td>System</td><td>Sends SMS + email to the customer</td><td>Auto</td></tr>
+    </tbody>
+  </table>
+  <h4 style="font-size:14px;margin:0 0 8px">Why Day 6 for the Alameda reschedule?</h4>
+  <table style="margin-bottom:14px">
+    <thead><tr><th>Day</th><th class="num">Buffer</th><th>Cluster fit</th><th>Decision</th></tr></thead>
+    <tbody>
+      <tr><td>Day 4</td><td class="num">47 min</td><td>No (Sausalito)</td><td class="neg">Wrong cluster, +20 mi</td></tr>
+      <tr><td>Day 5</td><td class="num">99 min</td><td>No (Sausalito / Berkeley)</td><td class="neg">Wrong cluster</td></tr>
+      <tr style="background:#f0fdf4"><td><strong>Day 6</strong></td><td class="num"><strong>105 min</strong></td><td><strong>Yes (Berkeley nearby)</strong></td><td class="pos"><strong>Best fit — +3 mi only</strong></td></tr>
+      <tr><td>Day 7</td><td class="num">99 min</td><td>No (South SF / SF Core)</td><td class="neg">Wrong direction</td></tr>
+    </tbody>
+  </table>
+  <div class="callout amber"><strong>Key logic:</strong> we don't just pick the day with the most buffer — we pick the day where the customer <strong>fits the existing route</strong>, to avoid adding unnecessary miles.</div>
+  <h4 style="font-size:14px;margin:16px 0 8px">Customer notification (auto-SMS)</h4>
+  <div style="background:#f9fafb;border:2px solid var(--line);border-radius:10px;padding:14px;max-width:420px;font-size:14px">
+    <p style="font-size:11px;color:var(--muted);margin:0 0 6px">SMS from the delivery team</p>
+    <p style="margin:0">"Hi — we attempted your delivery today but couldn't reach you. We've rescheduled you to <strong>Day 6, 1:00–3:00 PM</strong>. Reply YES to confirm, or call us to pick another time."</p>
+  </div>
+
+  <h3 style="font-size:15px;margin:22px 0 8px">Cost impact calculator</h3>
+  <div class="grid2" id="costImpact"></div>
+  <div class="callout blue" style="margin-top:12px" id="impactBottom"><strong>Bottom line:</strong> route-optimized rescheduling costs a few dollars. A standalone trip costs $244. That's why we match clusters, not just buffer.</div>
+
+  <h3 style="font-size:15px;margin:22px 0 8px">Implementation roadmap</h3>
+  <table>
+    <thead><tr><th>Phase</th><th>Timeline</th><th>Deliverable</th><th>Cost</th><th class="c">Status</th></tr></thead>
+    <tbody>
+      <tr style="background:#f0fdf4"><td><strong>Phase 1</strong></td><td>Week 1</td><td>Sales quoting spreadsheet</td><td class="pos"><strong>Free</strong></td><td class="c"><span class="badge b-grn">START HERE</span></td></tr>
+      <tr><td><strong>Phase 2</strong></td><td>Weeks 2–3</td><td>Dispatch dashboard (spreadsheet + manual updates)</td><td>Free</td><td class="c"><span class="badge b-gry">NEXT</span></td></tr>
+      <tr><td><strong>Phase 3</strong></td><td>Month 2</td><td>Driver mobile app (route software)</td><td>$150–300/mo</td><td class="c"><span class="badge b-gry">LATER</span></td></tr>
+      <tr><td><strong>Phase 4</strong></td><td>Month 3+</td><td>Integrated system (custom build)</td><td>$5–20k</td><td class="c"><span class="badge b-gry">SCALE</span></td></tr>
+    </tbody>
+  </table>
+  <div class="callout blue" style="margin-top:12px"><strong>Key point:</strong> start with a spreadsheet — operational in a week. Scale to real software once the pricing model is validated.</div>
 </section>
 
 <!-- 9. INTERACTIVE TOOLS -->
@@ -470,6 +585,31 @@ function recompute(){
   document.getElementById("kFuelPct").textContent = Math.round(fuelPct)+"%";
   document.getElementById("kFuel").textContent = fmt(fuel);
 
+  // Operations: buffer grid + cost impact
+  document.getElementById("bufferGrid").innerHTML = DAYS.map(d=>{
+    const buf=d[7], st = buf<30?["CRITICAL","b-red","#fee2e2"]:buf<60?["TIGHT","b-yel","#fef3c7"]:["ABSORB","b-grn","#dcfce7"];
+    return `<div style="background:${st[2]};border-radius:10px;padding:10px 6px;text-align:center"><div style="font-weight:700;font-size:13px">Day ${d[0]}</div><div style="font-size:22px;font-weight:800">${buf}</div><div style="font-size:10px;color:var(--muted)">min buffer</div><div style="margin-top:6px"><span class="badge ${st[1]}" style="font-size:10px">${st[0]}</span></div></div>`;
+  }).join("");
+  const sameLo = Math.round(3*mile), sameHi = Math.round(5*mile);
+  const diffC = Math.round(12*mile + 0.25*rate);
+  const alone = Math.round(30*mile + 2*rate);
+  const otHr = Math.round(rate*0.5);
+  const card = (title,rows,total,tcls)=>`<div class="step"><h4>${title}</h4>${rows}<div style="border-top:1px solid var(--line);margin-top:8px;padding-top:8px;display:flex;justify-content:space-between"><strong>Total</strong><strong class="${tcls}" style="font-size:18px">${total}</strong></div></div>`;
+  document.getElementById("costImpact").innerHTML =
+    card("Same-cluster day",
+      `<p>Extra miles to existing route: ~3 mi</p><p>Fuel: 3 × $${mile} = $${(3*mile).toFixed(2)}</p><p class="pos"><strong>Extra labor: $0 (already working)</strong></p>`,
+      "+$"+sameLo+"–"+sameHi, "pos")+
+    card("Different cluster",
+      `<p>Detour miles: ~12 mi</p><p>Fuel: 12 × $${mile} = $${(12*mile).toFixed(2)}</p><p>Extra time: 0.25 hrs × $${rate} = $${(0.25*rate).toFixed(2)}</p>`,
+      "+$"+diffC, "")+
+    card("Standalone trip (worst case)",
+      `<p>Round trip: ~30 mi</p><p>Fuel: 30 × $${mile} = $${(30*mile).toFixed(2)}</p><p>Labor: 2 hrs × $${rate} = $${(2*rate).toFixed(2)}</p>`,
+      "+$"+alone, "neg")+
+    card("Authorize overtime",
+      `<p>Regular rate: $${rate}/hr</p><p>OT rate: $${rate} × 1.5 = $${(rate*1.5).toFixed(2)}/hr</p><p>Incremental cost per OT hour: $${(rate*0.5).toFixed(2)}</p>`,
+      "+$"+otHr+"/hr", "");
+  document.getElementById("impactBottom").innerHTML = `<strong>Bottom line:</strong> route-optimized rescheduling costs <strong>+$${sameLo}–${sameHi}</strong>. A standalone trip costs <strong>+$${alone}</strong>. That's why we match clusters, not just buffer.`;
+
   drawSplit(); drawDays(); drawVol();
 }
 
@@ -506,7 +646,7 @@ function drawVol(){
   const sorted=[...CUSTOMERS].sort((a,b)=>b[1]-a[1]);
   mkChart("chVol",{type:"bar",
     data:{labels:sorted.map(c=>c[0].replace("CUST","C")),
-    datasets:[{label:"cu ft",data:sorted.map(c=>c[1]),backgroundColor:sorted.map(c=>c[2]==="Local"?"#4472C4":"#ED7D31")}]},
+    datasets:[{label:"cu ft",data:sorted.map(c=>c[1]),backgroundColor:sorted.map(c=>c[2]==="Local"?"#1d4ed8":"#f59e0b")}]},
     options:{maintainAspectRatio:false,indexAxis:"y",plugins:{legend:{display:false}}}});
 }
 function drawMap(){
