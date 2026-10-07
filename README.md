@@ -1,5 +1,7 @@
 # Delivery Economics Dashboard
 
+**Live demo: https://lorisca-analytics.github.io/delivery-economics-dashboard/**
+
 **A white-glove delivery operation losing $1,156 on 13 orders — and the fix isn't routing, it's pricing.**
 
 A national luxury furniture retailer offered white-glove delivery at a flat rate per order. This repo is the full business case: the analysis, the rebuild, and the dashboard a manager would actually use. Labor is 92% of the cost, the service standard is fixed, and a 20% routing improvement saves $96 against a $1,156 loss. The only levers big enough are price and policy.
@@ -61,6 +63,4 @@ flowchart TD
     H --> I["Interactive Tools<br/>Calculators on the same model"]
 ```
 
-Highlights: the **Operations System** section (system architecture, the three tools for sales/dispatch/driver, reschedule and no-show decision rules) sits right after the summary — it's the strongest idea. **Route Visualization** has a day-by-day route map with the truck's path drawn per day. **Scenario Comparison** carries editable inputs and a verdict table. **Interactive Tools** includes the pricing calculator, the 15-minute labor rounding calculator, and the disruption policy.
-
-Live demo: https://lorisca-analytics.github.io/delivery-economics-dashboard/
+Highlights: the **Operations System** section (system architecture, the three tools for sales/dispatch/driver, reschedule and no-show decision rules, the live no-show scenario, cost-impact calculator, implementation roadmap) sits right after the summary — it's the strongest idea. **Route Visualization** has a day-by-day route map with the truck's path drawn per day. **Scenario Comparison** carries editable inputs and a verdict table. **Interactive Tools** includes the pricing calculator, the 15-minute labor rounding calculator, and the disruption policy.
