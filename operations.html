@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Proposed Operational Design Flow — Delivery Economics</title>
+<meta name="description" content="Translating delivery optimization into real-world execution: the system architecture, tools, decision rules, and disruption playbook.">
+<style>
+  :root {
+    --navy:#0e1b33; --navy2:#16294d; --accent:#2f6fed; --accent-soft:#e8effe;
+    --ink:#1a2332; --muted:#5b6675; --paper:#faf8f5; --card:#ffffff; --line:#e8e2d8;
+    --green:#15803d; --green-bg:#f0fdf4; --red:#b91c1c; --red-bg:#fef2f2;
+    --amber:#d97706; --amber-bg:#fffbeb; --blue-bg:#eff6ff;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; color:var(--ink); background:var(--paper); line-height:1.6; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1080px; margin:0 auto; padding:0 24px; }
+  nav.top { position:sticky; top:0; z-index:50; background:rgba(14,27,51,.96); backdrop-filter:blur(8px); }
+  nav.top .wrap { display:flex; align-items:center; gap:28px; padding-top:14px; padding-bottom:14px; }
+  nav.top .brand { color:#fff; font-weight:800; font-size:15px; text-decoration:none; }
+  nav.top .brand span { color:#8fb0ff; }
+  nav.top .links { display:flex; gap:22px; margin-left:auto; }
+  nav.top a.link { color:#c3cede; text-decoration:none; font-size:14px; }
+  .hero { background:linear-gradient(160deg,var(--navy),var(--navy2)); color:#fff; padding:72px 0 64px; }
+  .eyebrow { display:inline-block; font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:#8fb0ff; margin-bottom:16px; }
+  .hero h1 { font-size:clamp(30px,4.4vw,48px); font-weight:800; letter-spacing:-.025em; line-height:1.1; max-width:20ch; }
+  .hero .sub { margin-top:18px; font-size:17px; color:#c3cede; max-width:60ch; }
+  section.block { padding:64px 0; }
+  section.block.alt { background:var(--card); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+  .kicker { font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); margin-bottom:12px; }
+  h2.title { font-size:clamp(22px,3vw,32px); font-weight:800; letter-spacing:-.02em; }
+  .lede { margin-top:12px; font-size:16px; color:var(--muted); max-width:64ch; }
+  .callout { border-radius:12px; padding:16px 20px; font-size:15px; margin:24px 0; }
+  .callout.amber { background:var(--amber-bg); border-left:4px solid var(--amber); }
+  .callout.blue { background:var(--blue-bg); border:1px solid #bfdbfe; }
+  pre.arch { background:var(--navy); color:#4ade80; padding:22px; border-radius:14px; font-size:12.5px; overflow-x:auto; line-height:1.6; margin-top:20px; }
+  .cards3 { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; margin-top:24px; }
+  .tool { border:1px solid var(--line); border-radius:14px; padding:26px; background:var(--card); }
+  .tool .n { display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:50%; background:var(--navy); color:#fff; font-weight:800; font-size:15px; margin-bottom:14px; }
+  .tool h3 { font-size:17px; margin-bottom:8px; }
+  .tool p { font-size:14px; color:var(--muted); }
+  .tool .formula { margin-top:12px; font-family:ui-monospace,Menlo,monospace; font-weight:700; color:var(--accent); font-size:13px; }
+  .rules { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:24px; }
+  @media(max-width:700px){ .rules{grid-template-columns:1fr;} }
+  .rule { border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:10px; padding:20px; background:var(--card); }
+  .rule h4 { font-size:15px; margin-bottom:10px; }
+  .rule p { font-size:14px; color:var(--muted); margin:6px 0; }
+  .badge { display:inline-block; font-size:11px; font-weight:700; padding:3px 10px; border-radius:999px; color:#fff; }
+  .b-red{background:#dc2626;} .b-yel{background:#d97706;} .b-grn{background:#16a34a;} .b-gry{background:#9ca3af;} .b-blu{background:#2f6fed;}
+  table { width:100%; border-collapse:collapse; font-size:14px; background:var(--card); }
+  th, td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); }
+  th { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; } td.c, th.c { text-align:center; }
+  .mockup { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:24px; margin-top:24px; }
+  .bufgrid { display:grid; grid-template-columns:repeat(7,1fr); gap:10px; margin-top:20px; }
+  @media(max-width:700px){ .bufgrid{grid-template-columns:repeat(4,1fr);} }
+  .buf { border-radius:10px; padding:12px 6px; text-align:center; }
+  .sms { background:var(--card); border:2px solid var(--line); border-radius:12px; padding:18px; max-width:440px; margin-top:16px; }
+  .impact { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:20px; }
+  @media(max-width:700px){ .impact{grid-template-columns:1fr;} }
+  .imp { border:1px solid var(--line); border-radius:12px; padding:22px; background:var(--card); }
+  .imp h4 { font-size:15px; margin-bottom:10px; }
+  .imp p { font-size:13.5px; color:var(--muted); margin:4px 0; display:flex; justify-content:space-between; }
+  .imp .total { border-top:1px solid var(--line); margin-top:10px; padding-top:10px; display:flex; justify-content:space-between; font-weight:800; font-size:16px; }
+  .inputs4 { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:20px 0 4px; }
+  @media(max-width:700px){ .inputs4{grid-template-columns:repeat(2,1fr);} }
+  .inp { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px; text-align:center; }
+  .inp .l { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+  .inp .v { font-size:19px; font-weight:800; color:var(--accent); }
+  footer.site { padding:56px 0 48px; color:var(--muted); font-size:13px; }
+  footer.site .wrap { display:flex; gap:32px; flex-wrap:wrap; justify-content:space-between; }
+  footer.site a { color:var(--accent); text-decoration:none; }
+  .toc { display:flex; flex-wrap:wrap; gap:10px; margin-top:24px; }
+  .toc a { font-size:13px; font-weight:600; color:var(--accent); text-decoration:none; border:1px solid var(--line); background:var(--card); padding:8px 16px; border-radius:999px; }
+</style>
+</head>
+<body>
+
+<nav class="top">
+  <div class="wrap">
+    <a class="brand" href="index.html">Delivery<span>Economics</span></a>
+    <div class="links">
+      <a class="link" href="index.html">Overview</a>
+      <a class="link" href="dashboard.html">Dashboard</a>
+      <a class="link" href="CASE-STUDY.md">Case study</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="eyebrow">Proposed operational design flow</span>
+    <h1>Translating optimization into real-world execution.</h1>
+    <p class="sub">The spreadsheet plans the week. Running the day takes a system — for the dispatcher, the salesperson, and the driver. This is the operating design that sits on top of the optimized schedule.</p>
+    <div class="toc">
+      <a href="#rules">Decision rules</a><a href="#dispatch">Dispatch view</a><a href="#disruption">Disruption playbook</a><a href="#scenario">Live scenario</a><a href="#cost">Cost impact</a><a href="#roadmap">Roadmap</a>
+    </div>
+  </div>
+</header>
+
+<section class="block">
+  <div class="wrap">
+    <div class="kicker">The gap</div>
+    <h2 class="title">Excel handles weekly planning. The day needs a real-time system.</h2>
+    <p class="lede">Customer reschedules, traffic delays, no-shows, and instant quotes can't wait for next week's planning cycle. The design below closes that gap.</p>
+    <div class="kicker" style="margin-top:36px">System architecture</div>
+    <pre class="arch">+----------------------------------------------------------+
+|                  DELIVERY OPERATIONS                 |
++----------------------------------------------------------+
+|                                                          |
+|  +----------+      +----------+      +----------+        |
+|  | PLANNING |      | DISPATCH |      |  SALES   |        |
+|  | (weekly) |----->| (daily)  |<---->| (quote)  |        |
+|  +----------+      +----------+      +----------+        |
+|       |                 |                  |             |
+|       +-----------------+------------------+             |
+|                         |                                |
+|                         v                                |
+|  +--------------------------------------------------+    |
+|  | SHARED DATABASE                                  |    |
+|  | orders · truck GPS · buffer remaining            |    |
+|  | pricing rules · reschedule history               |    |
+|  +--------------------------------------------------+    |
++----------------------------------------------------------+</pre>
+    <div class="kicker" style="margin-top:36px">Three tools</div>
+    <div class="cards3">
+      <div class="tool"><span class="n">1</span><h3>Sales quoting tool</h3><p>iPad/POS plugin for instant delivery quotes. Salesperson enters cubic feet — gets the price. No phone calls to operations.</p><div class="formula">$150 + ($0.25 × volume)</div><p style="margin-top:8px">Surcharges: stairs +$50 · expedited +$150 · assembly +$100</p></div>
+      <div class="tool"><span class="n">2</span><h3>Dispatch dashboard</h3><p>Real-time route status and buffer monitoring. When a customer calls to reschedule, the dispatcher sees which days have capacity and moves them with one click.</p><div class="formula">buffer &gt; 60 · 30–60 · &lt; 30</div><p style="margin-top:8px">Live truck locations · one-click reschedule · overtime alerts</p></div>
+      <div class="tool"><span class="n">3</span><h3>Driver mobile app</h3><p>Navigation plus three exception buttons — the driver taps, the system handles the logic.</p><div class="formula">delay → ETA · no-answer → timer · reschedule → slot</div><p style="margin-top:8px">Traffic Delay → updates ETAs · No Answer → starts wait timer · Customer Reschedule → logs &amp; finds slot</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="block alt" id="rules">
+  <div class="wrap">
+    <div class="kicker">Embedded decision rules</div>
+    <h2 class="title">Dispatchers don't think — they execute.</h2>
+    <p class="lede">Every rule below is embedded in the tools above. The judgment is made once, at design time.</p>
+    <div class="rules">
+      <div class="rule"><h4>Reschedule logic</h4>
+        <p><span class="badge b-grn">1st time → FREE</span></p><p>→ Find a day with buffer &gt; 60 min</p>
+        <p><span class="badge b-yel">2nd time → $75</span></p><p>→ Find a day with buffer &gt; 30 min</p>
+        <p><span class="badge b-red">3rd+ time → $75</span></p><p>→ Moved to the end of the queue</p></div>
+      <div class="rule"><h4>No-show logic</h4>
+        <p><strong>If driver waited ≥ 15 min and no contact:</strong></p>
+        <p>→ Mark as no-show</p><p>→ Charge $75 fee</p>
+        <p>→ Log wasted trip: 2 hrs × $104/hr = $208</p><p>→ Auto-reschedule to next available window</p></div>
+      <div class="rule"><h4>Overtime prevention</h4>
+        <p><strong>If current time + remaining work &gt; 5:00 PM:</strong></p>
+        <p>→ Alert dispatch</p>
+        <p>→ Options: (a) skip last stop and reschedule · (b) authorize OT at 1.5× rate · (c) call customer, reduce scope</p></div>
+      <div class="rule"><h4>Traffic delay cascade</h4>
+        <p><strong>When the driver taps "Traffic Delay":</strong></p>
+        <p>1. Recalculate ETAs for all remaining stops</p><p>2. Check if the new timeline passes 5 PM</p>
+        <p>3. If yes → trigger overtime prevention</p><p>4. Notify affected customers by SMS</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="dispatch">
+  <div class="wrap">
+    <div class="kicker">Dispatch dashboard — live view</div>
+    <h2 class="title">What the dispatcher sees at 10:42 AM.</h2>
+    <div class="mockup">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <strong>Today: Day 1 · Truck 1 — active route</strong>
+        <span><span class="badge b-gry" style="margin-right:6px">Refresh</span><span class="badge b-red">1 alert</span></span>
+      </div>
+      <table>
+        <thead><tr><th class="c">Stop</th><th>Customer</th><th>ETA</th><th class="c">Status</th><th class="num">Volume</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td class="c">1</td><td style="font-family:monospace">CUST2424</td><td>9:30 AM</td><td class="c"><span class="badge b-grn">✓ Done</span></td><td class="num">1,305</td><td>—</td></tr>
+          <tr style="background:var(--blue-bg)"><td class="c">2</td><td style="font-family:monospace">CUST2508</td><td>11:15 AM</td><td class="c"><span class="badge b-blu">En route</span></td><td class="num">276</td><td>—</td></tr>
+          <tr><td class="c">3</td><td style="font-family:monospace">CUST1946</td><td>1:30 PM</td><td class="c"><span class="badge b-gry">Pending</span></td><td class="num">2,282</td><td><span style="color:var(--accent);text-decoration:underline;font-size:12px">Reschedule</span></td></tr>
+          <tr><td class="c">4</td><td style="font-family:monospace">CUST7395</td><td>2:45 PM</td><td class="c"><span class="badge b-gry">Pending</span></td><td class="num">406</td><td><span style="color:var(--accent);text-decoration:underline;font-size:12px">Reschedule</span></td></tr>
+          <tr><td class="c">5</td><td style="font-family:monospace">CUST6446</td><td>4:00 PM</td><td class="c"><span class="badge b-gry">Pending</span></td><td class="num">2,229</td><td><span style="color:var(--accent);text-decoration:underline;font-size:12px">Reschedule</span></td></tr>
+        </tbody>
+      </table>
+      <div style="display:flex;justify-content:space-between;margin-top:14px;font-size:13px;flex-wrap:wrap;gap:8px">
+        <span>Buffer remaining: <strong style="color:var(--amber)">3 min</strong> <span style="color:var(--amber)">⚠ tight — no same-day adds</span></span>
+        <span style="color:var(--muted)">Miles: 24 / 59 completed</span>
+      </div>
+      <div class="callout" style="background:var(--red-bg);border:1px solid #fecaca;margin:14px 0 0"><strong>Alert · 10:42 AM</strong> — CUST2508 requested a reschedule (1st time) → <strong style="color:var(--green)">moved to Day 7 (buffer: 99 min) ✓</strong></div>
+    </div>
+  </div>
+</section>
+
+<section class="block alt" id="disruption">
+  <div class="wrap">
+    <div class="kicker">Disruption playbook</div>
+    <h2 class="title">Tight days carry the risk. The playbook absorbs it.</h2>
+    <p class="lede">Days 1–3 run on buffers under 30 minutes. When something breaks there, this is the flow.</p>
+    <div class="bufgrid">
+      <div class="buf" style="background:#fee2e2"><div style="font-weight:700;font-size:13px">Day 1</div><div style="font-size:24px;font-weight:800">3</div><div style="font-size:10px;color:var(--muted)">min buffer</div><div style="margin-top:6px"><span class="badge b-red" style="font-size:10px">CRITICAL</span></div></div>
+      <div class="buf" style="background:#fee2e2"><div style="font-weight:700;font-size:13px">Day 2</div><div style="font-size:24px;font-weight:800">23</div><div style="font-size:10px;color:var(--muted)">min buffer</div><div style="margin-top:6px"><span class="badge b-red" style="font-size:10px">CRITICAL</span></div></div>
+      <div class="buf" style="background:#fee2e2"><div style="font-weight:700;font-size:13px">Day 3</div><div style="font-size:24px;font-weight:800">10</div><div style="font-size:10px;color:var(--muted)">min buffer</div><div style="margin-top:6px"><span class="badge b-red" style="font-size:10px">CRITICAL</span></div></div>
+      <div class="buf" style="background:#fef3c7"><div style="font-weight:700;font-size:13px">Day 4</div><div style="font-size:24px;font-weight:800">47</div><div style="font-size:10px;color:var(--muted)">min buffer</div><div style="margin-top:6px"><span class="badge b-yel" style="font-size:10px">TIGHT</span></div></div>
+      <div class="buf" style="background:#dcfce7"><div style="font-weight:700;font-size:13px">Day 5</div><div style="font-size:24px;font-weight:800">99</div><div style="font-size:10px;color:var(--muted)">min buffer</div><div style="margin-top:6px"><span class="badge b-grn" style="font-size:10px">ABSORB</span></div></div>
+      <div class="buf" style="background:#dcfce7"><div style="font-weight:700;font-size:13px">Day 6</div><div style="font-size:24px;font-weight:800">105</div><div style="font-size:10px;color:var(--muted)">min buffer</div><div style="margin-top:6px"><span class="badge b-grn" style="font-size:10px">ABSORB</span></div></div>
+      <div class="buf" style="background:#dcfce7"><div style="font-weight:700;font-size:13px">Day 7</div><div style="font-size:24px;font-weight:800">99</div><div style="font-size:10px;color:var(--muted)">min buffer</div><div style="margin-top:6px"><span class="badge b-grn" style="font-size:10px">ABSORB</span></div></div>
+    </div>
+    <div class="kicker" style="margin-top:36px">Decision flow for disruption</div>
+    <pre class="arch">DISRUPTION OCCURS (customer not home, traffic, access issue)
+                    |
+                    v
+         +----------------------+
+         |  Can we still        |
+         |  finish by 5 PM?     |
+         +----------+-----------+
+                    |
+           +-------+-------+
+           |               |
+          YES              NO
+           |               |
+           v               v
+       Continue     +---------------------+
+       route        |  Skip this stop     |
+                    |  Reschedule to      |
+                    |  SAME-CLUSTER day   |
+                    |  with buffer        |
+                    +----------+----------+
+                               |
+                               v
+                    +---------------------+
+                    |  Notify customer    |
+                    |  via SMS (auto)     |
+                    |  within 2 minutes   |
+                    +---------------------+</pre>
+  </div>
+</section>
+
+<section class="block" id="scenario">
+  <div class="wrap">
+    <div class="kicker">Live scenario</div>
+    <h2 class="title">No-show on Day 1, resolved by 1:47 PM.</h2>
+    <p class="lede"><strong>Situation:</strong> CUST1946 (Alameda, 2,282 cu ft) isn't home at 1:30 PM on Day 1. Buffer is only 3 minutes. The crew is already behind.</p>
+    <table style="margin-top:20px">
+      <thead><tr><th class="c">Step</th><th>Who</th><th>Action</th><th>Time</th></tr></thead>
+      <tbody>
+        <tr><td class="c"><strong>1</strong></td><td>Driver</td><td>Taps "No Answer" in the app, waits 15 min</td><td>1:30 PM</td></tr>
+        <tr><td class="c"><strong>2</strong></td><td>System</td><td>Starts timer, alerts dispatch</td><td>Auto</td></tr>
+        <tr><td class="c"><strong>3</strong></td><td>Driver</td><td>Taps "Customer Unreachable" after the wait</td><td>1:45 PM</td></tr>
+        <tr><td class="c"><strong>4</strong></td><td>Dispatch</td><td>Sees the alert, checks buffer days</td><td>1:46 PM</td></tr>
+        <tr><td class="c"><strong>5</strong></td><td>System</td><td style="color:var(--green)"><strong>Auto-identifies Day 6 (105 min buffer)</strong></td><td>Auto</td></tr>
+        <tr><td class="c"><strong>6</strong></td><td>Dispatch</td><td>Confirms the reschedule with one click</td><td>1:47 PM</td></tr>
+        <tr><td class="c"><strong>7</strong></td><td>System</td><td>Sends SMS + email to the customer</td><td>Auto</td></tr>
+      </tbody>
+    </table>
+    <h3 style="font-size:16px;margin:28px 0 12px">Why Day 6 for the Alameda reschedule?</h3>
+    <table>
+      <thead><tr><th>Day</th><th class="num">Buffer</th><th>Cluster fit</th><th>Decision</th></tr></thead>
+      <tbody>
+        <tr><td>Day 4</td><td class="num">47 min</td><td>No (Sausalito)</td><td style="color:var(--red)">Wrong cluster, +20 mi</td></tr>
+        <tr><td>Day 5</td><td class="num">99 min</td><td>No (Sausalito / Berkeley)</td><td style="color:var(--red)">Wrong cluster</td></tr>
+        <tr style="background:var(--green-bg)"><td><strong>Day 6</strong></td><td class="num"><strong>105 min</strong></td><td><strong>Yes (Berkeley nearby)</strong></td><td style="color:var(--green)"><strong>Best fit — +3 mi only</strong></td></tr>
+        <tr><td>Day 7</td><td class="num">99 min</td><td>No (South SF / SF Core)</td><td style="color:var(--red)">Wrong direction</td></tr>
+      </tbody>
+    </table>
+    <div class="callout amber"><strong>Key logic:</strong> we don't just pick the day with the most buffer — we pick the day where the customer <strong>fits the existing route</strong>, to avoid adding unnecessary miles.</div>
+    <h3 style="font-size:16px;margin:24px 0 4px">Customer notification (auto-SMS)</h3>
+    <div class="sms">
+      <p style="font-size:11px;color:var(--muted);margin-bottom:8px">SMS from the delivery team</p>
+      <p style="font-size:14px">"Hi — we attempted your delivery today but couldn't reach you. We've rescheduled you to <strong>Day 6, 1:00–3:00 PM</strong>. Reply YES to confirm, or call us to pick another time."</p>
+    </div>
+  </div>
+</section>
+
+<section class="block alt" id="cost">
+  <div class="wrap">
+    <div class="kicker">Cost impact</div>
+    <h2 class="title">A reschedule costs $4. A wasted trip costs $244.</h2>
+    <p class="lede">At the case-documented $104/hr crew rate and $1.21/mile. That's why we match clusters, not just buffer.</p>
+    <div class="inputs4">
+      <div class="inp"><div class="l">Hourly rate</div><div class="v">$104</div></div>
+      <div class="inp"><div class="l">Cost / mile</div><div class="v">$1.21</div></div>
+      <div class="inp"><div class="l">OT multiplier</div><div class="v">1.5×</div></div>
+      <div class="inp"><div class="l">Avg service time</div><div class="v">1.5 hrs</div></div>
+    </div>
+    <div class="impact">
+      <div class="imp"><h4>Same-cluster day</h4>
+        <p><span>Extra miles to existing route: ~3 mi</span></p>
+        <p><span>Fuel: 3 × $1.21</span><span>$3.63</span></p>
+        <p><span>Extra labor</span><span style="color:var(--green);font-weight:700">$0 (already working)</span></p>
+        <div class="total"><span>Total</span><span style="color:var(--green)">+$4–6</span></div></div>
+      <div class="imp"><h4>Different cluster</h4>
+        <p><span>Detour miles: ~12 mi</span></p>
+        <p><span>Fuel: 12 × $1.21</span><span>$14.52</span></p>
+        <p><span>Extra time: 0.25 hrs × $104</span><span>$26.00</span></p>
+        <div class="total"><span>Total</span><span>+$41</span></div></div>
+      <div class="imp"><h4>Standalone trip (worst case)</h4>
+        <p><span>Round trip: ~30 mi</span></p>
+        <p><span>Fuel: 30 × $1.21</span><span>$36.30</span></p>
+        <p><span>Labor: 2 hrs × $104</span><span>$208.00</span></p>
+        <div class="total"><span>Total</span><span style="color:var(--red)">+$244</span></div></div>
+      <div class="imp"><h4>Authorize overtime</h4>
+        <p><span>Regular rate</span><span>$104/hr</span></p>
+        <p><span>OT rate: $104 × 1.5</span><span>$156.00/hr</span></p>
+        <p><span>Incremental cost per OT hour</span><span>$52.00</span></p>
+        <div class="total"><span>Per OT hour</span><span>+$52/hr</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="roadmap">
+  <div class="wrap">
+    <div class="kicker">Implementation roadmap</div>
+    <h2 class="title">Operational in a week. Scaled when the pricing is proven.</h2>
+    <table style="margin-top:20px">
+      <thead><tr><th>Phase</th><th>Timeline</th><th>Deliverable</th><th>Cost</th><th class="c">Status</th></tr></thead>
+      <tbody>
+        <tr style="background:var(--green-bg)"><td><strong>Phase 1</strong></td><td>Week 1</td><td>Sales quoting spreadsheet</td><td style="color:var(--green)"><strong>Free</strong></td><td class="c"><span class="badge b-grn">START HERE</span></td></tr>
+        <tr><td><strong>Phase 2</strong></td><td>Weeks 2–3</td><td>Dispatch dashboard (spreadsheet + manual updates)</td><td>Free</td><td class="c"><span class="badge b-gry">NEXT</span></td></tr>
+        <tr><td><strong>Phase 3</strong></td><td>Month 2</td><td>Driver mobile app (route software)</td><td>$150–300/mo</td><td class="c"><span class="badge b-gry">LATER</span></td></tr>
+        <tr><td><strong>Phase 4</strong></td><td>Month 3+</td><td>Integrated system (custom build)</td><td>$5–20k</td><td class="c"><span class="badge b-gry">SCALE</span></td></tr>
+      </tbody>
+    </table>
+    <div class="callout blue"><strong>Key point:</strong> start with a spreadsheet — operational in a week. Scale to real software once the pricing model is validated.</div>
+  </div>
+</section>
+
+<footer class="site">
+  <div class="wrap">
+    <div>Part of the <a href="index.html">Delivery Economics</a> case study · <a href="dashboard.html">Dashboard</a> · <a href="CASE-STUDY.md">Case study</a><br>Anonymized — no company, instructor, or customer names.</div>
+    <div><a href="https://github.com/lorisca-analytics/delivery-economics-dashboard">GitHub repo</a></div>
+  </div>
+</footer>
+
+</body>
+</html>
