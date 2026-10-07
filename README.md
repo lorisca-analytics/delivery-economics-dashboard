@@ -36,7 +36,7 @@ flowchart LR
 2. **Daily operations** — the 7-day schedule (loads, travel/service minutes, miles) plus the concierge rescheduling policy: first reschedule free, $75 after — framed as service, priced to cover the wasted trip.
 3. **Unit economics** — labor/fuel split and a per-customer P&L table. Cost is allocated by volume ($0.2292/cu ft, stated in-app). Eight of thirteen customers lose money; the five smallest orders subsidize the rest.
 
-![Unit economics](screenshots/unit-economics.png)
+![Unit economics](screenshots/unit-economics.jpg)
 
 4. **Pricing decision** — interactive calculator: any order volume against the proposed $150 + $0.25/cu ft formula. Breakeven on the current book needs +$88.94 per delivery; the volume formula gets there without punishing small orders (276 cu ft → $219, 3,970 cu ft → $1,143).
 5. **Investment levers** — two trucks (+$1,092, rejected), luxury pace (+$3,040 — the price tag of the brand promise at its extreme), bigger truck (−$1,664, the only lever that reaches profitability: $508 profit).
