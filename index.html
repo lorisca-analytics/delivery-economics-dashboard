@@ -3,705 +3,207 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Delivery Economics Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<title>Delivery Economics — a white-glove delivery case study</title>
+<meta name="description" content="A $1,156 loss on 13 white-glove furniture deliveries — and why the fix is pricing, not routing.">
 <style>
-  :root { --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb; --accent:#1d4ed8; --red:#b91c1c; --green:#15803d; --bg:#f6f7f9; --card:#ffffff; }
-  * { box-sizing:border-box; }
-  body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; margin:0; background:var(--bg); color:var(--ink); }
-  header.top { background:#111827; color:#fff; padding:28px 32px 0; }
-  header.top h1 { margin:0 0 6px; font-size:24px; font-weight:700; }
-  header.top p { margin:0; color:#9ca3af; font-size:14px; }
-  .chip { display:inline-block; margin:12px 0 18px; background:#1f2937; border:1px solid #374151; color:#d1d5db; font-size:12px; padding:6px 12px; border-radius:999px; }
-  nav.tabs { display:flex; flex-wrap:wrap; gap:6px; padding:0 32px 16px; background:#111827; position:sticky; top:0; z-index:50; }
-  nav.tabs button { background:#1f2937; color:#d1d5db; border:1px solid #374151; border-radius:8px; padding:8px 14px; font-size:13px; cursor:pointer; }
-  nav.tabs button.active { background:var(--accent); color:#fff; border-color:var(--accent); }
-  .wrap { max-width:1100px; margin:0 auto; padding:24px 20px 60px; }
-  section.card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:22px 24px; margin-bottom:20px; }
-  section.card h2 { margin:0 0 4px; font-size:18px; }
-  section.card .deck { margin:0 0 16px; color:var(--muted); font-size:14px; }
-  section.view { display:none; } section.view.active { display:block; }
-  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:20px 0 0; }
-  .kpi { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 16px; text-align:center; }
-  .kpi .value { font-size:26px; font-weight:700; }
-  .kpi .label { font-size:12px; color:var(--muted); margin-top:4px; }
-  .neg { color:var(--red); } .pos { color:var(--green); }
-  table { width:100%; border-collapse:collapse; font-size:14px; }
-  th, td { text-align:left; padding:9px 10px; border-bottom:1px solid var(--line); }
-  th { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); font-weight:600; }
-  tr:last-child td { border-bottom:none; }
-  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
-  td.c, th.c { text-align:center; }
-  .chartbox { position:relative; height:260px; margin-top:8px; }
-  .badge { display:inline-block; font-size:11px; font-weight:700; padding:3px 10px; border-radius:999px; color:#fff; }
-  .b-red { background:#dc2626; } .b-yel { background:#d97706; } .b-grn { background:#16a34a; } .b-gry { background:#9ca3af; } .b-blu { background:#1d4ed8; }
-  .verdict { display:inline-block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; padding:3px 10px; border-radius:999px; margin-top:8px; }
-  .verdict.no { background:#fee2e2; color:var(--red); } .verdict.yes { background:#dcfce7; color:var(--green); } .verdict.maybe { background:#fef3c7; color:#b45309; }
-  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; } @media(max-width:800px){ .grid2{grid-template-columns:1fr;} }
-  .grid3 { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; }
-  .step { background:#f9fafb; border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:8px; padding:14px 16px; }
-  .step h4 { margin:0 0 6px; font-size:14px; } .step p { margin:0; font-size:13px; color:var(--muted); }
-  .callout { border-radius:10px; padding:14px 16px; font-size:14px; margin-bottom:16px; }
-  .callout.blue { background:#eff6ff; border:1px solid #bfdbfe; }
-  .callout.amber { background:#fffbeb; border-left:4px solid #f59e0b; }
-  .callout.red { background:#fef2f2; border:1px solid #fecaca; }
-  .callout.green { background:#f0fdf4; border:1px solid #bbf7d0; }
-  .rowline { display:flex; justify-content:space-between; padding:12px 14px; border-radius:10px; margin-bottom:8px; font-size:14px; }
-  .field label { display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
-  .field input, .field select { width:100%; padding:10px 12px; font-size:15px; border:1px solid var(--line); border-radius:8px; }
-  .inputgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; }
-  .inbox { background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:12px 14px; }
-  .btn { background:var(--accent); color:#fff; border:none; border-radius:8px; padding:8px 16px; font-size:13px; cursor:pointer; }
-  .btn.ghost { background:#f3f4f6; color:var(--ink); border:1px solid var(--line); }
-  .daybtns { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
-  .daybtns .btn.active { background:var(--accent); color:#fff; }
-  pre.arch { background:#111827; color:#4ade80; padding:16px; border-radius:10px; font-size:12px; overflow-x:auto; line-height:1.5; }
-  footer { color:var(--muted); font-size:12px; margin-top:28px; line-height:1.6; }
-  .note { font-size:12px; color:var(--muted); margin-top:10px; }
-  .legend { display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; font-size:12px; color:var(--muted); }
+  :root {
+    --navy:#0e1b33; --navy2:#16294d; --accent:#2f6fed; --accent-soft:#e8effe;
+    --ink:#1a2332; --muted:#5b6675; --paper:#faf8f5; --card:#ffffff; --line:#e8e2d8;
+    --green:#15803d; --red:#b91c1c; --gold:#c98a2d;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; color:var(--ink); background:var(--paper); line-height:1.6; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1080px; margin:0 auto; padding:0 24px; }
+
+  nav.top { position:sticky; top:0; z-index:50; background:rgba(14,27,51,.96); backdrop-filter:blur(8px); }
+  nav.top .wrap { display:flex; align-items:center; gap:28px; padding-top:14px; padding-bottom:14px; }
+  nav.top .brand { color:#fff; font-weight:800; font-size:15px; letter-spacing:.01em; text-decoration:none; }
+  nav.top .brand span { color:#8fb0ff; }
+  nav.top a.link { color:#c3cede; text-decoration:none; font-size:14px; margin-left:auto; }
+  nav.top a.link + a.link { margin-left:0; }
+  nav.top .links { display:flex; gap:22px; margin-left:auto; }
+
+  .hero { background:linear-gradient(160deg,var(--navy) 0%,var(--navy2) 70%); color:#fff; padding:96px 0 88px; position:relative; overflow:hidden; }
+  .hero::after { content:""; position:absolute; right:-120px; top:-120px; width:480px; height:480px; border-radius:50%; background:radial-gradient(circle,rgba(47,111,237,.28),transparent 70%); }
+  .eyebrow { display:inline-block; font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:#8fb0ff; margin-bottom:20px; }
+  .hero h1 { font-size:clamp(34px,5vw,58px); font-weight:800; letter-spacing:-.025em; line-height:1.08; max-width:16ch; }
+  .hero h1 em { font-style:normal; color:#8fb0ff; }
+  .hero .sub { margin-top:22px; font-size:18px; color:#c3cede; max-width:58ch; }
+  .ctas { display:flex; gap:14px; margin-top:34px; flex-wrap:wrap; }
+  .btn { display:inline-block; padding:14px 28px; border-radius:10px; font-weight:700; font-size:15px; text-decoration:none; }
+  .btn.primary { background:var(--accent); color:#fff; }
+  .btn.primary:hover { background:#255fe0; }
+  .btn.ghost { border:1px solid #3b4d73; color:#e6ebf5; }
+  .btn.ghost:hover { border-color:#8fb0ff; }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1px; background:#2a3c5e; border-radius:14px; overflow:hidden; margin-top:56px; }
+  .stat { background:rgba(255,255,255,.03); padding:22px 24px; }
+  .stat .v { font-size:30px; font-weight:800; letter-spacing:-.02em; }
+  .stat .v.neg { color:#ff8a8a; } .stat .v.pos { color:#7ddba3; }
+  .stat .l { font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:#8ea0bd; margin-top:6px; }
+
+  section.block { padding:88px 0; }
+  section.block.alt { background:var(--card); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+  .kicker { font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); margin-bottom:14px; }
+  h2.title { font-size:clamp(26px,3.4vw,38px); font-weight:800; letter-spacing:-.02em; line-height:1.15; max-width:24ch; }
+  .lede { margin-top:16px; font-size:17px; color:var(--muted); max-width:62ch; }
+  .figure { margin-top:40px; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:28px; }
+  section.block.alt .figure { background:var(--paper); }
+  .figure img { width:100%; height:auto; border-radius:8px; }
+  .figure .cap { margin-top:14px; font-size:13px; color:var(--muted); }
+
+  .contrast { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:36px; }
+  @media(max-width:700px){ .contrast{grid-template-columns:1fr;} }
+  .order { border:1px solid var(--line); border-radius:14px; padding:26px; background:var(--card); }
+  .order .cu { font-size:40px; font-weight:800; letter-spacing:-.02em; }
+  .order .fee { margin-top:10px; font-size:15px; }
+  .order .fee strong { font-size:22px; }
+  .order.bad .cu { color:var(--red); } .order.good .cu { color:var(--green); }
+  .vs { display:flex; align-items:center; justify-content:center; font-weight:800; color:var(--gold); font-size:13px; letter-spacing:.1em; margin-top:36px; }
+
+  .cards3 { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; margin-top:36px; }
+  .tool { border:1px solid var(--line); border-radius:14px; padding:26px; background:var(--card); }
+  .tool .n { display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:50%; background:var(--navy); color:#fff; font-weight:800; font-size:15px; margin-bottom:14px; }
+  .tool h3 { font-size:17px; margin-bottom:8px; }
+  .tool p { font-size:14px; color:var(--muted); }
+  .tool .formula { margin-top:12px; font-family:ui-monospace,Menlo,monospace; font-weight:700; color:var(--accent); }
+
+  .repro { background:var(--navy); border-radius:16px; padding:30px; margin-top:36px; color:#dbe4f3; }
+  .repro pre { font-family:ui-monospace,Menlo,monospace; font-size:13.5px; line-height:1.7; overflow-x:auto; }
+  .repro .c { color:#7d8aa5; }
+
+  .cta-band { background:linear-gradient(160deg,var(--navy),var(--navy2)); border-radius:20px; padding:64px 48px; text-align:center; color:#fff; margin-top:8px; }
+  .cta-band h2 { font-size:clamp(24px,3vw,34px); font-weight:800; letter-spacing:-.02em; }
+  .cta-band p { color:#c3cede; margin:14px auto 28px; max-width:52ch; }
+
+  footer.site { padding:56px 0 48px; color:var(--muted); font-size:13px; }
+  footer.site .wrap { display:flex; gap:32px; flex-wrap:wrap; justify-content:space-between; }
+  footer.site a { color:var(--accent); text-decoration:none; }
 </style>
 </head>
 <body>
-<header class="top">
-  <h1>Delivery Economics Dashboard</h1>
-  <p style="color:#fff;font-size:16px;font-weight:600;margin:8px 0 0">A white-glove delivery operation losing $1,156 on 13 orders — and the fix isn't routing, it's pricing.</p>
-  <p>White-glove furniture delivery · 13 customers · Bay Area · a national luxury furniture retailer</p>
-  <span class="chip">Service standard is fixed: no split orders · full install + staging + cleanup</span>
+
+<nav class="top">
+  <div class="wrap">
+    <a class="brand" href="index.html">Delivery<span>Economics</span></a>
+    <div class="links">
+      <a class="link" href="dashboard.html">Dashboard</a>
+      <a class="link" href="CASE-STUDY.md">Case study</a>
+      <a class="link" href="https://github.com/lorisca-analytics/delivery-economics-dashboard">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="eyebrow">Portfolio case study · Operations analytics</span>
+    <h1>A white-glove delivery operation losing <em>$1,156</em> on 13 orders — and the fix isn't routing, <em>it's pricing.</em></h1>
+    <p class="sub">A national luxury furniture retailer promised white-glove delivery at a flat rate. I rebuilt the operation end to end — 171 order lines, 21 truckloads, 7 days — and proved the loss is structural. Labor is 92% of cost and happens inside customers' homes, where routing can't touch it.</p>
+    <div class="ctas">
+      <a class="btn primary" href="dashboard.html">Open the dashboard →</a>
+      <a class="btn ghost" href="CASE-STUDY.md">Read the case study</a>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="v neg">−$1,156</div><div class="l">Net on the book</div></div>
+      <div class="stat"><div class="v neg">−23.7%</div><div class="l">Margin</div></div>
+      <div class="stat"><div class="v">92%</div><div class="l">Cost is labor</div></div>
+      <div class="stat"><div class="v">$104<span style="font-size:16px">/hr</span></div><div class="l">Crew rate, case-documented</div></div>
+      <div class="stat"><div class="v pos">+$508</div><div class="l">Profit with a bigger truck</div></div>
+    </div>
+  </div>
 </header>
-<nav class="tabs" id="tabs"></nav>
-<div class="wrap">
-<!-- 1. EXECUTIVE SUMMARY -->
-<section class="view card active" id="v-executive">
-  <h2>Executive Summary</h2>
-  <p class="deck">The operation, the loss, and the answer — in one screen.</p>
-  <div class="callout red"><strong>The finding:</strong> this is a <strong>pricing problem, not a routing problem</strong>. Labor is <span id="exLaborPct">92</span>% of cost and happens inside customers' homes, where routing can't touch it. A 20% routing improvement saves <span id="exRoutingSave">$96</span> against a <span id="exLoss">$1,156</span> loss.</div>
-  <div class="kpis">
-    <div class="kpi"><div class="value">26,369</div><div class="label">cu ft delivered</div></div>
-    <div class="kpi"><div class="value">21</div><div class="label">truckloads</div></div>
-    <div class="kpi"><div class="value">7</div><div class="label">working days</div></div>
-    <div class="kpi"><div class="value">396</div><div class="label">miles</div></div>
-    <div class="kpi"><div class="value">74%</div><div class="label">avg utilization</div></div>
-    <div class="kpi"><div class="value neg" id="exNet">−$1,156</div><div class="label">net on the book</div></div>
-  </div>
-  <div class="grid3" style="margin-top:16px">
-    <div class="step"><h4>What was asked</h4><p>Optimize routes, truck loading, and the daily schedule for 13 customers — then answer whether flat-rate delivery fees should change, by how much, and why.</p></div>
-    <div class="step"><h4>What the numbers say</h4><p id="exNums">$6,043 in cost against $4,887 in fees. Eight of thirteen customers lose money; the five smallest orders subsidize the rest.</p></div>
-    <div class="step"><h4>The recommendation</h4><p>Volume-based pricing at $150 + $0.25/cu ft — or +$88.94 per delivery on flat fees. Bigger truck as the capital lever: it flips the loss into a $508 profit.</p></div>
-  </div>
-</section>
 
-<!-- 2. MODELING APPROACH -->
-<section class="view card" id="v-approach">
-  <h2>Modeling Approach</h2>
-  <p class="deck">How the optimization was structured — and what was deliberately not optimized.</p>
-  <div class="callout blue"><strong>Primary objective: minimize total cost.</strong> <span id="apObj">Labor is 92% of cost; fuel is 8%. Optimizing routes affects only the 8%. Therefore the model prioritized <strong>minimizing working days</strong> over minimizing miles.</span></div>
-  <h3 style="font-size:15px;margin:0 0 10px">Sequencing decisions</h3>
-  <div class="grid3" style="margin-bottom:16px">
-    <div class="step"><h4>1 · Geographic clustering</h4><p>Group customers by proximity to minimize travel between stops — six Bay Area clusters around the SF SOMA warehouse.</p></div>
-    <div class="step"><h4>2 · Load packing</h4><p>Bin-pack orders into the 1,700 cu ft truck without splitting any customer's order across loads.</p></div>
-    <div class="step"><h4>3 · Day assignment</h4><p>Assign loads to days inside the 540-minute (9-hour) work window, keeping 3 loads per day.</p></div>
-  </div>
-  <div class="callout amber"><strong>Trade-off accepted:</strong> 74% average utilization rather than 100% — forcing perfect packing would split customer orders across days, degrading the white-glove experience and adding labor cost.</div>
-  <h3 style="font-size:15px;margin:0 0 10px">Constraint hierarchy</h3>
-  <table>
-    <thead><tr><th>Constraint</th><th>Value</th><th class="c">Binding?</th><th>Impact</th></tr></thead>
-    <tbody>
-      <tr><td><strong>Daily work window</strong></td><td>540 min (9 hrs)</td><td class="c"><span class="badge b-red">YES</span></td><td>Limits loads to 3 per day</td></tr>
-      <tr><td><strong>Truck volume</strong></td><td>1,700 cu ft</td><td class="c"><span class="badge b-red">YES</span></td><td>Requires 21 loads for 26,369 cu ft</td></tr>
-      <tr><td>Truck weight</td><td>7,000 lbs</td><td class="c"><span class="badge b-gry">NO</span></td><td>Volume fills first in most loads</td></tr>
-      <tr><td>Operating days</td><td>Tue–Sat</td><td class="c"><span class="badge b-gry">NO</span></td><td>7 working days span two weeks</td></tr>
-      <tr><td>Service standard</td><td>White glove, fixed</td><td class="c"><span class="badge b-red">YES</span></td><td>No split orders, no rushed crews — rules out cost-only moves</td></tr>
-    </tbody>
-  </table>
-</section>
-
-<!-- 3. OPTIMIZATION RESULTS -->
-<section class="view card" id="v-results">
-  <h2>Optimization Results</h2>
-  <p class="deck">The 7-day schedule: 21 loads, every day inside the work window.</p>
-  <div class="kpis" style="margin-top:0">
-    <div class="kpi"><div class="value">26,369</div><div class="label">cu ft · total volume</div></div>
-    <div class="kpi"><div class="value">21</div><div class="label">truckloads</div></div>
-    <div class="kpi"><div class="value">7</div><div class="label">working days</div></div>
-    <div class="kpi"><div class="value">74%</div><div class="label">avg utilization</div></div>
-  </div>
-  <h3 style="font-size:15px;margin:18px 0 10px">Daily delivery schedule</h3>
-  <table id="schedTable">
-    <thead><tr><th class="c">Day</th><th>Loads</th><th class="num">Travel</th><th class="num">Service</th><th class="num">Total</th><th class="num">Miles</th><th class="num">Buffer</th><th class="c">Status</th></tr></thead>
-    <tbody></tbody>
-  </table>
-  <div class="chartbox"><canvas id="chDays"></canvas></div>
-  <div class="grid3" style="margin-top:14px">
-    <div class="callout green" style="margin:0"><strong>Buffer &gt; 60 min</strong><br>Can absorb a same-day reschedule</div>
-    <div class="callout amber" style="margin:0"><strong>Buffer 30–60 min</strong><br>Tight but manageable</div>
-    <div class="callout red" style="margin:0"><strong>Buffer &lt; 30 min</strong><br>Risk of overtime if disrupted</div>
-  </div>
-  <p class="note">Buffer = 540-minute window minus scheduled travel + service. Days 1–3 run tight — they carry the reschedule risk.</p>
-</section>
-<!-- 4. ROUTE VISUALIZATION -->
-<section class="view card" id="v-routes">
-  <h2>Route Visualization</h2>
-  <p class="deck">Six geographic clusters around the SF SOMA warehouse. Select a day to see its route; same-day stops stay inside one cluster.</p>
-  <div class="daybtns" id="dayBtns"></div>
-  <div class="grid2">
-    <div>
-      <div class="chartbox" style="height:380px"><canvas id="chMap"></canvas></div>
-      <div class="legend" id="mapLegend"></div>
+<section class="block">
+  <div class="wrap">
+    <div class="kicker">The problem</div>
+    <h2 class="title">One flat fee. Two wildly different deliveries.</h2>
+    <p class="lede">The white-glove promise is fixed — no split orders, no rushed crews, full install and staging. That's the brand. But the flat fee ignores the only thing that drives cost: how much furniture is on the truck.</p>
+    <div class="contrast">
+      <div class="order good"><div class="cu">276 cu ft</div><div class="fee">pays <strong>$399</strong> · costs $63 to deliver · <strong style="color:var(--green)">+$336 profit</strong></div></div>
+      <div class="order bad"><div class="cu">3,970 cu ft</div><div class="fee">pays <strong>$399</strong> · costs $910 to deliver · <strong style="color:var(--red)">−$511 loss</strong></div></div>
     </div>
-    <div>
-      <h3 style="font-size:15px;margin:0 0 10px">Geographic clusters</h3>
-      <div id="clusters" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
-      <h3 style="font-size:15px;margin:0 0 6px">Customer volumes</h3>
-      <div class="chartbox" style="height:300px"><canvas id="chVol"></canvas></div>
+    <div class="vs">SAME FEE · 14× THE VOLUME</div>
+  </div>
+</section>
+
+<section class="block alt">
+  <div class="wrap">
+    <div class="kicker">The method</div>
+    <h2 class="title">Structured with SPIDER, verified end to end.</h2>
+    <p class="lede">Every section of the portfolio method answers one business question — under one fixed constraint: the white-glove promise.</p>
+    <div class="figure">
+      <img src="docs/spider-framework.png" alt="SPIDER framework applied to this project">
+      <div class="cap">The six SPIDER sections mapped to this project, each answering one question a business would ask.</div>
+    </div>
+    <div class="figure">
+      <img src="docs/analysis-path.png" alt="Path of the analysis from raw data to decision">
+      <div class="cap">From 171 raw order lines to a pricing decision — including the audit that caught three errors in my own original model.</div>
     </div>
   </div>
 </section>
 
-<!-- 5. COST ANALYSIS -->
-<section class="view card" id="v-cost">
-  <h2>Cost Analysis</h2>
-  <p class="deck">Where the money goes — and what the flat fees cover.</p>
-  <div class="grid2">
-    <div>
-      <h3 style="font-size:15px;margin:0 0 6px">Cost structure</h3>
-      <div class="chartbox" style="height:240px"><canvas id="chSplit"></canvas></div>
-      <div id="costRows" style="margin-top:12px"></div>
+<section class="block">
+  <div class="wrap">
+    <div class="kicker">The finding</div>
+    <h2 class="title">Eight of thirteen customers lose money.</h2>
+    <p class="lede">Cost allocated by volume — $0.2292 per cubic foot, stated not hidden. The five smallest orders subsidize the rest. A 20% routing improvement saves $96 against a $1,156 loss: 8% of the problem.</p>
+    <div class="figure">
+      <img src="screenshots/unit-economics.jpg" alt="Per-customer profit and loss">
+      <div class="cap">Per-customer P&L. The answer: volume-based pricing at $150 + $0.25/cu ft — or +$88.94 per delivery on flat fees.</div>
     </div>
-    <div>
-      <h3 style="font-size:15px;margin:0 0 6px">Revenue &amp; profit</h3>
-      <div id="revRows"></div>
-    </div>
-  </div>
-  <h3 style="font-size:15px;margin:18px 0 10px">Adjust parameters</h3>
-  <div class="inputgrid">
-    <div class="inbox field"><label>Crew rate ($/hr, fully loaded)</label><input type="number" id="inRate" value="104" step="0.5" oninput="recompute()"></div>
-    <div class="inbox field"><label>Cost per mile ($)</label><input type="number" id="inMile" value="1.21" step="0.01" oninput="recompute()"></div>
-    <div class="inbox field"><label>Local flat fee ($)</label><input type="number" id="inLocal" value="299" step="1" oninput="recompute()"></div>
-    <div class="inbox field"><label>Extended flat fee ($)</label><input type="number" id="inExt" value="399" step="1" oninput="recompute()"></div>
-    <div class="inbox field"><label>Labor hours (verified)</label><input type="number" id="inHours" value="53.5" step="0.1" oninput="recompute()"></div>
-    <div class="inbox field"><label>Miles (verified)</label><input type="number" id="inMiles" value="396" step="1" oninput="recompute()"></div>
-  </div>
-  <p class="note">Defaults are the case-documented values. Every figure on this page recomputes live.</p>
-</section>
-
-<!-- 6. SCENARIO COMPARISON -->
-<section class="view card" id="v-scenarios">
-  <h2>Scenario Comparison</h2>
-  <p class="deck">Three alternatives tested against the base case — tune the inputs and watch the verdicts move.</p>
-  <div class="chartbox" style="height:280px"><canvas id="chScen"></canvas></div>
-  <div class="inputgrid" style="margin:14px 0">
-    <div class="inbox field"><label>Speed: number of trucks</label><input type="number" id="inTrucks" value="2" min="1" max="5" oninput="recompute()"></div>
-    <div class="inbox field"><label>Luxury: loads per day</label><input type="number" id="inLuxLoads" value="2" min="1" max="3" oninput="recompute()"></div>
-    <div class="inbox field"><label>Capacity: new truck (cu ft)</label><input type="number" id="inNewCap" value="2000" min="1700" max="3000" step="100" oninput="recompute()"></div>
-  </div>
-  <table id="scenTable">
-    <thead><tr><th>Metric</th><th class="c">Base case</th><th class="c" id="thSpeed">Speed</th><th class="c" id="thLux">Luxury</th><th class="c" id="thCap">Capacity</th></tr></thead>
-    <tbody></tbody>
-  </table>
-  <p class="note">Speed: parallel crews, 10% coordination overhead per truck, 15% deadhead fuel per extra truck. Luxury: 7.5 hrs/day at premium pace. Capacity: fewer trips in a bigger truck.</p>
-</section>
-<!-- 7. PRICING STRATEGY -->
-<section class="view card" id="v-pricing">
-  <h2>Pricing Strategy</h2>
-  <p class="deck">Should flat-rate fees be reviewed?</p>
-  <div class="callout green" style="font-size:18px"><strong>Yes.</strong></div>
-  <div class="callout red"><strong>The problem with flat fees.</strong> <span id="prProblem">One customer ordered 3,970 cu ft requiring 3 loads; another ordered 276 cu ft. Both pay $399.</span> The fee ignores the cost driver.</div>
-  <div class="grid2" style="margin-bottom:16px">
-    <div class="step"><h4>Option A: flat increase</h4><p id="prOptA">+$88.94 per delivery to break even — local becomes $387.94, extended $487.94. Simple, but it doesn't address the volume disparity.</p></div>
-    <div class="step" style="border-left-color:var(--green)"><h4>Option B: volume-based <span class="badge b-grn">RECOMMENDED</span></h4><p><strong>$150 + $0.25/cu ft.</strong> A 276 cu ft order pays $219; a 3,970 cu ft order pays $1,143. Aligns price with actual delivery cost.</p></div>
-  </div>
-  <h3 style="font-size:15px;margin:0 0 10px">Impact on actual customers</h3>
-  <table id="priceTable">
-    <thead><tr><th>Customer</th><th class="num">Volume</th><th class="c">Zone</th><th class="num">Current</th><th class="num">Proposed</th><th class="num">Change</th></tr></thead>
-    <tbody></tbody>
-  </table>
-</section>
-
-<!-- 8. OPERATIONS SYSTEM -->
-<section class="view card" id="v-operations">
-  <h2>Operations System</h2>
-  <p class="deck">The spreadsheet plans the week. Running the day takes a system — for the dispatcher, the salesperson, and the driver.</p>
-  <div class="callout amber"><strong>The gap:</strong> Excel handles <strong>weekly planning</strong>. Daily operations need <strong>real-time decision systems</strong> for customer reschedules, traffic delays, no-shows, and instant quotes.</div>
-  <h3 style="font-size:15px;margin:0 0 8px">System architecture</h3>
-  <pre class="arch">+----------------------------------------------------------+
-|                  DELIVERY OPERATIONS                 |
-+----------------------------------------------------------+
-|                                                          |
-|  +----------+      +----------+      +----------+        |
-|  | PLANNING |      | DISPATCH |      |  SALES   |        |
-|  | (weekly) |----->| (daily)  |<---->| (quote)  |        |
-|  +----------+      +----------+      +----------+        |
-|       |                 |                  |             |
-|       +-----------------+------------------+             |
-|                         |                                |
-|                         v                                |
-|  +--------------------------------------------------+    |
-|  | SHARED DATABASE                                  |    |
-|  | orders · truck GPS · buffer remaining            |    |
-|  | pricing rules · reschedule history               |    |
-|  +--------------------------------------------------+    |
-+----------------------------------------------------------+</pre>
-  <h3 style="font-size:15px;margin:18px 0 8px">Three tools</h3>
-  <div class="grid3">
-    <div class="step"><h4>1 · Sales quoting tool</h4><p>iPad/POS plugin — salesperson enters cubic feet, gets the price instantly.</p><p style="font-family:monospace;color:var(--accent);font-weight:700;margin-top:8px">$150 + ($0.25 × volume)</p><p class="note">Surcharges: stairs +$50 · expedited +$150 · assembly +$100</p></div>
-    <div class="step"><h4>2 · Dispatch dashboard</h4><p>Live truck locations, buffer remaining per day, one-click reschedule, overtime alerts.</p><p class="note" style="margin-top:8px">Buffer signal: <strong class="pos">&gt;60 min</strong> · <strong style="color:#b45309">30–60</strong> · <strong class="neg">&lt;30</strong></p></div>
-    <div class="step"><h4>3 · Driver app</h4><p>Navigation plus three exception buttons — the driver taps, the system handles the logic.</p><p class="note" style="margin-top:8px">Traffic delay → ETAs update · No answer → wait timer starts · Reschedule → logged, new slot found</p></div>
-  </div>
-  <h3 style="font-size:15px;margin:18px 0 8px">Decision rules</h3>
-  <div class="grid2">
-    <div class="step"><h4>Reschedule logic</h4>
-      <p style="margin:8px 0"><span class="badge b-grn">1st time → FREE</span></p>
-      <p style="margin:4px 0">→ Find a day with buffer &gt; 60 min</p>
-      <p style="margin:8px 0"><span class="badge b-yel">2nd time → $75</span></p>
-      <p style="margin:4px 0">→ Find a day with buffer &gt; 30 min</p>
-      <p style="margin:8px 0"><span class="badge b-red">3rd+ time → $75</span></p>
-      <p style="margin:4px 0 0">→ Moved to the end of the queue</p></div>
-    <div class="step"><h4>No-show logic</h4>
-      <p style="margin:8px 0"><strong>If driver waited ≥ 15 min and no contact:</strong></p>
-      <p style="margin:4px 0">→ Mark as no-show</p>
-      <p style="margin:4px 0">→ Charge $75 fee</p>
-      <p style="margin:4px 0">→ Log wasted trip: 2 hrs × crew rate</p>
-      <p style="margin:4px 0 0">→ Auto-reschedule to next available window</p></div>
-    <div class="step"><h4>Overtime prevention</h4>
-      <p style="margin:8px 0"><strong>If current time + remaining work &gt; 5:00 PM:</strong></p>
-      <p style="margin:4px 0">→ Alert dispatch</p>
-      <p style="margin:4px 0 0">→ Options: (a) skip last stop and reschedule · (b) authorize OT at 1.5× rate · (c) call customer, reduce scope</p></div>
-    <div class="step"><h4>Traffic delay cascade</h4>
-      <p style="margin:8px 0"><strong>When the driver taps "Traffic Delay":</strong></p>
-      <p style="margin:4px 0">1. Recalculate ETAs for all remaining stops</p>
-      <p style="margin:4px 0">2. Check if the new timeline passes 5 PM</p>
-      <p style="margin:4px 0">3. If yes → trigger overtime prevention</p>
-      <p style="margin:4px 0 0">4. Notify affected customers by SMS</p></div>
-  </div>
-
-  <h3 style="font-size:15px;margin:22px 0 8px">Dispatch dashboard — live view</h3>
-  <div style="background:#f9fafb;border:1px solid var(--line);border-radius:10px;padding:16px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <strong>Today: Day 1 · Truck 1 — active route</strong>
-      <span><span class="btn ghost" style="padding:4px 12px;font-size:12px;margin-right:6px">Refresh</span><span class="badge b-red">1 alert</span></span>
-    </div>
-    <table>
-      <thead><tr><th class="c">Stop</th><th>Customer</th><th>ETA</th><th class="c">Status</th><th class="num">Volume</th><th>Action</th></tr></thead>
-      <tbody>
-        <tr><td class="c">1</td><td style="font-family:monospace">CUST2424</td><td>9:30 AM</td><td class="c"><span class="badge b-grn">✓ Done</span></td><td class="num">1,305</td><td>—</td></tr>
-        <tr style="background:#eff6ff"><td class="c">2</td><td style="font-family:monospace">CUST2508</td><td>11:15 AM</td><td class="c"><span class="badge b-blu">En route</span></td><td class="num">276</td><td>—</td></tr>
-        <tr><td class="c">3</td><td style="font-family:monospace">CUST1946</td><td>1:30 PM</td><td class="c"><span class="badge b-gry">Pending</span></td><td class="num">2,282</td><td><span style="color:var(--accent);text-decoration:underline;font-size:12px">Reschedule</span></td></tr>
-        <tr><td class="c">4</td><td style="font-family:monospace">CUST7395</td><td>2:45 PM</td><td class="c"><span class="badge b-gry">Pending</span></td><td class="num">406</td><td><span style="color:var(--accent);text-decoration:underline;font-size:12px">Reschedule</span></td></tr>
-        <tr><td class="c">5</td><td style="font-family:monospace">CUST6446</td><td>4:00 PM</td><td class="c"><span class="badge b-gry">Pending</span></td><td class="num">2,229</td><td><span style="color:var(--accent);text-decoration:underline;font-size:12px">Reschedule</span></td></tr>
-      </tbody>
-    </table>
-    <div style="display:flex;justify-content:space-between;margin-top:12px;font-size:13px;flex-wrap:wrap;gap:8px">
-      <span>Buffer remaining: <strong style="color:#d97706">3 min</strong> <span style="color:#d97706">⚠ tight — no same-day adds</span></span>
-      <span style="color:var(--muted)">Miles: 24 / 59 completed</span>
-    </div>
-    <div class="callout red" style="margin:12px 0 0"><strong>Alert · 10:42 AM</strong> — CUST2508 requested a reschedule (1st time) → <span class="pos"><strong>moved to Day 7 (buffer: 99 min) ✓</strong></span></div>
-  </div>
-
-  <h3 style="font-size:15px;margin:22px 0 8px">Disruption management — buffer by day</h3>
-  <div class="grid3" id="bufferGrid" style="grid-template-columns:repeat(7,1fr)"></div>
-  <h3 style="font-size:15px;margin:18px 0 8px">Decision flow for disruption</h3>
-  <pre class="arch">DISRUPTION OCCURS (customer not home, traffic, access issue)
-                    |
-                    v
-         +----------------------+
-         |  Can we still        |
-         |  finish by 5 PM?     |
-         +----------+-----------+
-                    |
-           +-------+-------+
-           |               |
-          YES              NO
-           |               |
-           v               v
-       Continue     +---------------------+
-       route        |  Skip this stop     |
-                    |  Reschedule to      |
-                    |  SAME-CLUSTER day   |
-                    |  with buffer        |
-                    +----------+----------+
-                               |
-                               v
-                    +---------------------+
-                    |  Notify customer    |
-                    |  via SMS (auto)     |
-                    |  within 2 minutes   |
-                    +---------------------+</pre>
-
-  <h3 style="font-size:15px;margin:22px 0 8px">Live scenario — no-show on Day 1</h3>
-  <div class="callout blue"><strong>Situation:</strong> CUST1946 (Alameda, 2,282 cu ft) isn't home at 1:30 PM on Day 1. Buffer is only 3 minutes. The crew is already behind.</div>
-  <table style="margin-bottom:14px">
-    <thead><tr><th class="c">Step</th><th>Who</th><th>Action</th><th>Time</th></tr></thead>
-    <tbody>
-      <tr><td class="c"><strong>1</strong></td><td>Driver</td><td>Taps "No Answer" in the app, waits 15 min</td><td>1:30 PM</td></tr>
-      <tr><td class="c"><strong>2</strong></td><td>System</td><td>Starts timer, alerts dispatch</td><td>Auto</td></tr>
-      <tr><td class="c"><strong>3</strong></td><td>Driver</td><td>Taps "Customer Unreachable" after the wait</td><td>1:45 PM</td></tr>
-      <tr><td class="c"><strong>4</strong></td><td>Dispatch</td><td>Sees the alert, checks buffer days</td><td>1:46 PM</td></tr>
-      <tr><td class="c"><strong>5</strong></td><td>System</td><td class="pos"><strong>Auto-identifies Day 6 (105 min buffer)</strong></td><td>Auto</td></tr>
-      <tr><td class="c"><strong>6</strong></td><td>Dispatch</td><td>Confirms the reschedule with one click</td><td>1:47 PM</td></tr>
-      <tr><td class="c"><strong>7</strong></td><td>System</td><td>Sends SMS + email to the customer</td><td>Auto</td></tr>
-    </tbody>
-  </table>
-  <h4 style="font-size:14px;margin:0 0 8px">Why Day 6 for the Alameda reschedule?</h4>
-  <table style="margin-bottom:14px">
-    <thead><tr><th>Day</th><th class="num">Buffer</th><th>Cluster fit</th><th>Decision</th></tr></thead>
-    <tbody>
-      <tr><td>Day 4</td><td class="num">47 min</td><td>No (Sausalito)</td><td class="neg">Wrong cluster, +20 mi</td></tr>
-      <tr><td>Day 5</td><td class="num">99 min</td><td>No (Sausalito / Berkeley)</td><td class="neg">Wrong cluster</td></tr>
-      <tr style="background:#f0fdf4"><td><strong>Day 6</strong></td><td class="num"><strong>105 min</strong></td><td><strong>Yes (Berkeley nearby)</strong></td><td class="pos"><strong>Best fit — +3 mi only</strong></td></tr>
-      <tr><td>Day 7</td><td class="num">99 min</td><td>No (South SF / SF Core)</td><td class="neg">Wrong direction</td></tr>
-    </tbody>
-  </table>
-  <div class="callout amber"><strong>Key logic:</strong> we don't just pick the day with the most buffer — we pick the day where the customer <strong>fits the existing route</strong>, to avoid adding unnecessary miles.</div>
-  <h4 style="font-size:14px;margin:16px 0 8px">Customer notification (auto-SMS)</h4>
-  <div style="background:#f9fafb;border:2px solid var(--line);border-radius:10px;padding:14px;max-width:420px;font-size:14px">
-    <p style="font-size:11px;color:var(--muted);margin:0 0 6px">SMS from the delivery team</p>
-    <p style="margin:0">"Hi — we attempted your delivery today but couldn't reach you. We've rescheduled you to <strong>Day 6, 1:00–3:00 PM</strong>. Reply YES to confirm, or call us to pick another time."</p>
-  </div>
-
-  <h3 style="font-size:15px;margin:22px 0 8px">Cost impact calculator</h3>
-  <p class="deck">Live inputs — change the crew rate or cost per mile in Cost Analysis and watch these move.</p>
-  <div class="grid3" id="calcInputs" style="grid-template-columns:repeat(4,1fr);margin-bottom:12px"></div>
-  <div class="grid2" id="costImpact"></div>
-  <div class="callout blue" style="margin-top:12px" id="impactBottom"><strong>Bottom line:</strong> route-optimized rescheduling costs a few dollars. A standalone trip costs $244. That's why we match clusters, not just buffer.</div>
-
-  <h3 style="font-size:15px;margin:22px 0 8px">Implementation roadmap</h3>
-  <table>
-    <thead><tr><th>Phase</th><th>Timeline</th><th>Deliverable</th><th>Cost</th><th class="c">Status</th></tr></thead>
-    <tbody>
-      <tr style="background:#f0fdf4"><td><strong>Phase 1</strong></td><td>Week 1</td><td>Sales quoting spreadsheet</td><td class="pos"><strong>Free</strong></td><td class="c"><span class="badge b-grn">START HERE</span></td></tr>
-      <tr><td><strong>Phase 2</strong></td><td>Weeks 2–3</td><td>Dispatch dashboard (spreadsheet + manual updates)</td><td>Free</td><td class="c"><span class="badge b-gry">NEXT</span></td></tr>
-      <tr><td><strong>Phase 3</strong></td><td>Month 2</td><td>Driver mobile app (route software)</td><td>$150–300/mo</td><td class="c"><span class="badge b-gry">LATER</span></td></tr>
-      <tr><td><strong>Phase 4</strong></td><td>Month 3+</td><td>Integrated system (custom build)</td><td>$5–20k</td><td class="c"><span class="badge b-gry">SCALE</span></td></tr>
-    </tbody>
-  </table>
-  <div class="callout blue" style="margin-top:12px"><strong>Key point:</strong> start with a spreadsheet — operational in a week. Scale to real software once the pricing model is validated.</div>
-</section>
-
-<!-- 9. INTERACTIVE TOOLS -->
-<section class="view card" id="v-tools">
-  <h2>Interactive Tools</h2>
-  <p class="deck">Working calculators built on the same cost model.</p>
-  <div class="grid2">
-    <div>
-      <h3 style="font-size:15px;margin:0 0 10px">Pricing calculator</h3>
-      <div class="inputgrid" style="margin-bottom:12px">
-        <div class="inbox field"><label>Base fee ($)</label><input type="number" id="tBase" value="150" oninput="recompute()"></div>
-        <div class="inbox field"><label>Per cu ft ($)</label><input type="number" id="tPer" value="0.25" step="0.01" oninput="recompute()"></div>
-        <div class="inbox field"><label>Order volume (cu ft)</label><input type="number" id="tVol" value="1500" oninput="recompute()"></div>
-      </div>
-      <div class="grid3">
-        <div class="kpi"><div class="value" id="tCur" style="font-size:22px">–</div><div class="label">Current flat fee</div></div>
-        <div class="kpi"><div class="value pos" id="tNew" style="font-size:22px">–</div><div class="label">Proposed price</div></div>
-        <div class="kpi"><div class="value" id="tDiff" style="font-size:22px">–</div><div class="label">Difference</div></div>
-      </div>
-    </div>
-    <div>
-      <h3 style="font-size:15px;margin:0 0 10px">Labor rounding calculator</h3>
-      <div class="inbox field" style="margin-bottom:12px"><label>Minutes worked</label><input type="number" id="tMin" value="46" oninput="recompute()"></div>
-      <div class="grid3">
-        <div class="kpi"><div class="value" id="tHrs" style="font-size:22px">–</div><div class="label">Rounded hours</div></div>
-        <div class="kpi"><div class="value" id="tBill" style="font-size:22px">–</div><div class="label">Billable cost</div></div>
-      </div>
-      <p class="note"><strong>Rule:</strong> 15-minute increments, round up at 7+ minutes. Rate: <span id="tRate">$104</span>/hr.</p>
-      <h3 style="font-size:15px;margin:16px 0 10px">Disruption policy</h3>
-      <div class="inbox field" style="margin-bottom:10px;max-width:240px"><label>Concierge reschedule fee ($)</label><input type="number" id="tFee" value="75" oninput="recompute()"></div>
-      <div style="font-size:14px">
-        <p>· 1st reschedule: <strong class="pos">free</strong></p>
-        <p>· 2nd+ reschedule: <strong id="tFee2">$75 concierge fee</strong></p>
-        <p>· No-show: <strong id="tFee3">$75 fee</strong> + next available window</p>
-        <p class="note">Wasted trip cost: <span id="tWaste">$208</span> (2 hrs × crew rate) — the fee covers a third of it; the rest is the price of the promise.</p>
-      </div>
-    </div>
-  </div>
-  <div style="background:#111827;color:#fff;border-radius:12px;padding:20px 22px;margin-top:18px">
-    <h3 style="margin:0 0 12px;font-size:15px;color:#93c5fd">Key numbers</h3>
-    <div class="grid2" style="font-size:14px">
-      <div>
-        <p>Total cost: <strong id="kCost">$6,043</strong> · Labor <strong id="kLaborPct">92%</strong> (<span id="kLabor">$5,564</span>) · Fuel <strong id="kFuelPct">8%</strong> (<span id="kFuel">$479</span>)</p>
-        <p>Loads: <strong>21</strong> · Days: <strong>7</strong> · Miles: <strong>396</strong> · Utilization: <strong>74%</strong></p>
-      </div>
-      <div>
-        <p style="font-style:italic">"This is a pricing problem, not a routing problem."</p>
-        <p style="font-style:italic">"Delivery is a cost center, not a profit center — at current prices."</p>
-      </div>
+    <div class="ctas">
+      <a class="btn primary" href="dashboard.html">Explore the unit economics →</a>
     </div>
   </div>
 </section>
 
-<footer>
-  Built from 171 order lines across 13 customers, a 45-SKU item master, and case-documented operating parameters.
-  Crew rate restated at $104/hr (driver premium + benefits, per the case). Distances estimated at 25 mph, no traffic modeling.
-  Anonymized: no company, instructor, or customer names.
-  Repo: <a href="https://github.com/lorisca-analytics/delivery-economics-dashboard" style="color:var(--accent)">github.com/lorisca-analytics/delivery-economics-dashboard</a> ·
-  Case study: <a href="https://github.com/lorisca-analytics/delivery-economics-dashboard/blob/main/CASE-STUDY.md" style="color:var(--accent)"><em>Pricing, Not Routing</em></a> ·
-  Every number reproduces via <span style="font-family:monospace">analysis/recompute.py</span>.
+<section class="block alt">
+  <div class="wrap">
+    <div class="kicker">The strongest idea</div>
+    <h2 class="title">The spreadsheet plans the week. Running the day takes a system.</h2>
+    <p class="lede">Excel handles weekly planning. Daily operations need real-time decision systems — for the dispatcher, the salesperson, and the driver.</p>
+    <div class="cards3">
+      <div class="tool"><span class="n">1</span><h3>Sales quoting tool</h3><p>iPad/POS plugin — salesperson enters cubic feet, gets the price instantly.</p><div class="formula">$150 + ($0.25 × volume)</div></div>
+      <div class="tool"><span class="n">2</span><h3>Dispatch dashboard</h3><p>Live truck locations, buffer remaining per day, one-click reschedule, overtime alerts.</p><div class="formula">buffer &gt; 60 · 30–60 · &lt; 30</div></div>
+      <div class="tool"><span class="n">3</span><h3>Driver app</h3><p>Navigation plus three exception buttons — the driver taps, the system handles the logic.</p><div class="formula">delay → ETA · no-answer → timer · reschedule → slot</div></div>
+    </div>
+    <div class="ctas">
+      <a class="btn primary" href="dashboard.html" onclick="sessionStorage.setItem('tab','operations')">See the full operations system →</a>
+    </div>
+  </div>
+</section>
+
+<section class="block">
+  <div class="wrap">
+    <div class="kicker">Reproducible</div>
+    <h2 class="title">Every number on this page recomputes from raw data.</h2>
+    <p class="lede">The repo ships the inputs and the script. One command verifies the totals, the P&L, and the scenarios.</p>
+    <div class="repro">
+<pre><span class="c"># from the repo root</span>
+python3 analysis/recompute.py
+
+<span class="c"># →</span> Order lines: 171 | customers: 13 | SKUs mapped: 45
+<span class="c"># →</span> Total volume: 26,368.86 cu ft
+<span class="c"># →</span> Total cost: $6,043.16 | Revenue: $4,887.00 | Net: $-1,156.16 (-23.7%)</pre>
+    </div>
+  </div>
+</section>
+
+<section class="block" style="padding-top:0">
+  <div class="wrap">
+    <div class="cta-band">
+      <h2>See the operation the way a manager would.</h2>
+      <p>Nine sections: the summary, the operations system, the model, the schedule, the routes, the costs, the scenarios, the pricing answer — and the tools to test it yourself.</p>
+      <a class="btn primary" href="dashboard.html">Open the dashboard →</a>
+    </div>
+  </div>
+</section>
+
+<footer class="site">
+  <div class="wrap">
+    <div>Anonymized case study — no company, instructor, or customer names.<br>Built from 171 order lines, a 45-SKU item master, and case-documented parameters.</div>
+    <div><a href="dashboard.html">Dashboard</a> · <a href="CASE-STUDY.md">Case study</a> · <a href="https://github.com/lorisca-analytics/delivery-economics-dashboard">GitHub repo</a></div>
+  </div>
 </footer>
-</div>
-<script>
-const TABS = [
-  ["executive","Executive Summary"],["operations","Operations System"],["approach","Modeling Approach"],
-  ["results","Optimization Results"],["routes","Route Visualization"],["cost","Cost Analysis"],
-  ["scenarios","Scenario Comparison"],["pricing","Pricing Strategy"],["tools","Interactive Tools"]
-];
-const CUSTOMERS = [
-  ["CUST3301",3969.9,"Extended"],["CUST6536",3669.2,"Extended"],["CUST6699",3286.7,"Extended"],
-  ["CUST6446",2228.5,"Local"],["CUST1699",2198.4,"Local"],["CUST7026",2443.2,"Extended"],
-  ["CUST1946",2282.5,"Extended"],["CUST9189",1990.5,"Extended"],["CUST9119",1481.7,"Extended"],
-  ["CUST2424",1304.7,"Extended"],["CUST4928",831.5,"Local"],["CUST7395",405.7,"Extended"],["CUST2508",276.3,"Extended"]
-];
-const DAYS = [
-  [1,"Tue","7, 13, 15",141,396,537,58.6,3,["CUST2424","CUST2508","CUST1946","CUST7395","CUST6446"]],
-  [2,"Wed","3, 19, 21",169,348,517,70.6,23,["CUST9119","CUST9189","CUST4928"]],
-  [3,"Thu","1, 14, 20",189,341,530,78.6,10,["CUST6699","CUST1946","CUST9189"]],
-  [4,"Fri","2, 4, 5",141,352,493,58.8,47,["CUST6699","CUST3301"]],
-  [5,"Sat","6, 11, 8",135,306,441,69.0,99,["CUST3301","CUST7026","CUST6536"]],
-  [6,"Tue","12, 9, 16",125,310,435,69.0,105,["CUST7026","CUST6536","CUST6446"]],
-  [7,"Wed","10, 17, 18",96,345,441,34.0,99,["CUST6536","CUST1699"]]
-];
-const GEO = [
-  ["Warehouse",37.7599,-122.3894,"Hub","#111827"],
-  ["CUST1699",37.7897,-122.3972,"SF Core","#4472C4"],["CUST4928",37.7925,-122.4382,"SF Core","#4472C4"],["CUST6446",37.7930,-122.4161,"SF Core","#4472C4"],
-  ["CUST3301",37.8591,-122.4853,"Sausalito","#ED7D31"],["CUST6699",37.8594,-122.4815,"Sausalito","#ED7D31"],
-  ["CUST2424",37.8716,-122.2727,"Berkeley","#70AD47"],["CUST7026",37.8759,-122.2598,"Berkeley","#70AD47"],["CUST9119",37.8800,-122.2622,"Berkeley","#70AD47"],
-  ["CUST1946",37.7652,-122.2416,"Alameda","#FFC000"],["CUST2508",37.7712,-122.2824,"Alameda","#FFC000"],
-  ["CUST7395",37.7249,-122.1561,"San Leandro","#9E480E"],["CUST9189",37.7205,-122.1608,"San Leandro","#9E480E"],
-  ["CUST6536",37.6547,-122.4077,"South SF","#7030A0"]
-];
-const CLUSTERS = [
-  ["SF Core",3,"3.3 mi","#4472C4"],["Sausalito",2,"9.8 mi","#ED7D31"],["Berkeley",3,"14.2 mi","#70AD47"],
-  ["Alameda",2,"11.8 mi","#FFC000"],["San Leandro",2,"17.8 mi","#9E480E"],["South SF",1,"5.5 mi","#7030A0"]
-];
-const TOTAL_VOL = 26368.86, N_LOCAL = 3, N_EXT = 10, TOTAL_LOADS = 21;
-const fmt = n => "$" + Math.round(n).toLocaleString("en-US");
-const sgn = v => (v<0?"−$":"+$")+Math.round(Math.abs(v)).toLocaleString();
-let S = {}, selDay = 1;
-let charts = {};
 
-function showTab(id){
-  TABS.forEach(t=>{
-    document.getElementById("v-"+t[0]).classList.toggle("active", t[0]===id);
-  });
-  document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("active", b.dataset.tab===id));
-  if(id==="routes") drawMap();
-  window.scrollTo({top:0});
-}
-
-function recompute(){
-  const g = id => +document.getElementById(id).value || 0;
-  const rate = g("inRate")||104, mile = g("inMile")||1.21, local = g("inLocal")||299, ext = g("inExt")||399;
-  const hrs = g("inHours")||53.5, mi = g("inMiles")||396;
-  const labor = hrs*rate, fuel = mi*mile, cost = labor+fuel;
-  const rev = N_LOCAL*local + N_EXT*ext, pnl = rev-cost, margin = pnl/rev*100;
-  const laborPct = labor/cost*100, fuelPct = fuel/cost*100;
-  const inc = -pnl/13;
-  S = {rate,mile,local,ext,hrs,mi,labor,fuel,cost,rev,pnl,margin,laborPct,fuelPct,inc};
-
-  // Executive summary
-  document.getElementById("exLaborPct").textContent = Math.round(laborPct);
-  document.getElementById("exRoutingSave").textContent = fmt(fuel*0.2);
-  document.getElementById("exLoss").textContent = fmt(Math.abs(pnl));
-  const exNet = document.getElementById("exNet");
-  exNet.textContent = (pnl<0?"−":"+")+fmt(Math.abs(pnl)).slice(0);
-  exNet.textContent = (pnl<0?"−$":"+$")+Math.round(Math.abs(pnl)).toLocaleString();
-  exNet.className = "value "+(pnl<0?"neg":"pos");
-  document.getElementById("exNums").textContent = fmt(cost)+" in cost against "+fmt(rev)+" in fees. "+CUSTOMERS.filter(c=>c[1]*(cost/TOTAL_VOL)>(c[2]==="Local"?local:ext)).length+" of thirteen customers lose money; the rest subsidize them.";
-
-  // Approach
-  document.getElementById("apObj").innerHTML = "Labor is "+Math.round(laborPct)+"% of cost; fuel is "+Math.round(fuelPct)+"%. Optimizing routes affects only the "+Math.round(fuelPct)+"%. Therefore the model prioritized <strong>minimizing working days</strong> over minimizing miles.";
-
-  // Results table
-  document.querySelector("#schedTable tbody").innerHTML = DAYS.map(d=>{
-    const buf = d[7], cls = buf<30?"b-red":buf<60?"b-yel":"b-grn", lbl = buf<30?"TIGHT":buf<60?"OK":"GOOD";
-    return `<tr><td class="c"><strong>${d[0]}</strong> <span style="color:var(--muted)">${d[1]}</span></td><td style="color:var(--muted)">${d[2]}</td><td class="num">${d[3]} min</td><td class="num">${d[4]} min</td><td class="num"><strong>${d[3]+d[4]} min</strong></td><td class="num">${d[6]}</td><td class="num">${buf} min</td><td class="c"><span class="badge ${cls}">${lbl}</span></td></tr>`;
-  }).join("");
-
-  // Cost analysis
-  document.getElementById("costRows").innerHTML =
-    row("Labor ("+hrs+" hrs × $"+rate+"/hr)", fmt(labor), "#eff6ff")+
-    row("Fuel ("+mi+" mi × $"+mile+"/mi)", fmt(fuel), "#fff7ed")+
-    `<div class="rowline" style="background:#f3f4f6;font-size:16px"><strong>Total cost</strong><strong>${fmt(cost)}</strong></div>`;
-  function row(l,v,bg){ return `<div class="rowline" style="background:${bg}"><span>${l}</span><strong>${v}</strong></div>`; }
-  document.getElementById("revRows").innerHTML =
-    `<div class="rowline" style="background:#f9fafb"><span>Local (${N_LOCAL} × $${local})</span><span style="font-family:monospace">${fmt(N_LOCAL*local)}</span></div>`+
-    `<div class="rowline" style="background:#f9fafb"><span>Extended (${N_EXT} × $${ext})</span><span style="font-family:monospace">${fmt(N_EXT*ext)}</span></div>`+
-    `<div class="rowline" style="background:#f0fdf4"><strong>Total revenue</strong><strong class="pos">${fmt(rev)}</strong></div>`+
-    `<div class="rowline" style="background:#f3f4f6"><strong>Total cost</strong><strong>${fmt(cost)}</strong></div>`+
-    `<div class="rowline" style="background:${pnl>=0?"#dcfce7":"#fee2e2"};font-size:18px"><strong>Profit / (loss)</strong><strong class="${pnl>=0?"pos":"neg"}">${sgn(pnl)}</strong></div>`+
-    `<div class="rowline" style="background:#f9fafb"><span>Margin</span><strong class="${margin>=0?"pos":"neg"}">${margin.toFixed(1)}%</strong></div>`;
-
-  // Scenarios
-  const trucks = Math.min(5,Math.max(1,Math.round(g("inTrucks")||2)));
-  const luxLoads = Math.min(3,Math.max(1,Math.round(g("inLuxLoads")||2)));
-  const newCap = Math.min(3000,Math.max(1700,g("inNewCap")||2000));
-  const spdDays = Math.ceil(TOTAL_LOADS/(trucks*2.7));
-  const spd = {days:spdDays, labor:spdDays*trucks*8*rate, fuel:fuel*(1+(trucks-1)*0.15), label:"Speed ("+trucks+" trucks)"};
-  const luxDays = Math.ceil(TOTAL_LOADS/luxLoads);
-  const lux = {days:luxDays, labor:luxDays*7.5*rate, fuel:fuel*1.05, label:"Luxury ("+luxLoads+"/day)"};
-  const capTrips = Math.ceil(TOTAL_VOL/newCap), capDays = Math.ceil(capTrips/3);
-  const cap = {days:capDays, labor:capDays*7.5*rate, fuel:fuel, label:"Capacity ("+newCap.toLocaleString()+" cu ft)"};
-  const base = {days:7, labor, fuel, label:"Base case"};
-  [[spd,"thSpeed"],[lux,"thLux"],[cap,"thCap"]].forEach(([s,th])=>{ s.total=s.labor+s.fuel; s.diff=s.total-cost; document.getElementById(th).textContent=s.label; });
-  base.total = cost;
-  const scenRows = [
-    ["Strategy","1 truck, minimize days","Parallel ops, faster completion","Premium pace, better experience","Fewer trips, bigger loads"],
-    ["Days",base.days,spd.days,lux.days,cap.days],
-    ["Labor hours",hrs.toFixed(1),(spd.labor/rate).toFixed(1),(lux.labor/rate).toFixed(1),(cap.labor/rate).toFixed(1)],
-    ["Labor cost",fmt(base.labor),fmt(spd.labor),fmt(lux.labor),fmt(cap.labor)],
-    ["Fuel cost",fmt(base.fuel),fmt(spd.fuel),fmt(lux.fuel),fmt(cap.fuel)],
-    ["TOTAL COST","<strong>"+fmt(base.total)+"</strong>","<strong>"+fmt(spd.total)+"</strong>","<strong>"+fmt(lux.total)+"</strong>","<strong>"+fmt(cap.total)+"</strong>"],
-    ["vs base","—",diffCell(spd.diff),diffCell(lux.diff),diffCell(cap.diff)],
-    ["VERDICT",'<span class="badge b-grn">CHOSEN</span>',verdict(spd.diff),verdict(lux.diff),verdict(cap.diff)]
-  ];
-  function diffCell(d){ return `<span class="${d>0?"neg":"pos"}" style="font-weight:700">${sgn(d)}</span>`; }
-  function verdict(d){ return d<=0?'<span class="badge b-grn">BETTER</span>':'<span class="badge b-red">REJECTED</span>'; }
-  document.querySelector("#scenTable tbody").innerHTML = scenRows.map((r,i)=>
-    `<tr${i===5?' style="background:#f0fdf4"':""}><td><strong>${r[0]}</strong></td>${r.slice(1).map(c=>`<td class="c">${c}</td>`).join("")}</tr>`).join("");
-  drawScen(base,spd,lux,cap);
-
-  // Pricing
-  document.getElementById("prProblem").textContent = "One customer ordered 3,970 cu ft requiring 3 loads; another ordered 276 cu ft. Both pay $"+ext+". The fee ignores the cost driver.";
-  document.getElementById("prOptA").textContent = "+$"+inc.toFixed(2)+" per delivery to break even — local becomes $"+(local+inc).toFixed(2)+", extended $"+(ext+inc).toFixed(2)+". Simple, but it doesn't address the volume disparity.";
-  document.querySelector("#priceTable tbody").innerHTML = [...CUSTOMERS].sort((a,b)=>b[1]-a[1]).map(c=>{
-    const cur = c[2]==="Local"?local:ext, prop = Math.round(150+0.25*c[1]), d = prop-cur;
-    return `<tr><td style="font-family:monospace">${c[0]}</td><td class="num">${c[1].toLocaleString()} cu ft</td><td class="c"><span class="badge ${c[2]==="Local"?"b-blu":"b-yel"}">${c[2]}</span></td><td class="num">$${cur}</td><td class="num"><strong>$${prop.toLocaleString()}</strong></td><td class="num ${d>=0?"pos":"neg"}" style="font-weight:700">${d>=0?"+":"−"}$${Math.abs(d).toLocaleString()}</td></tr>`;
-  }).join("");
-
-  // Tools
-  const tBase = g("tBase")||150, tPer = +document.getElementById("tPer").value||0.25, tVol = g("tVol");
-  const cur = ext, prop = tBase + tPer*tVol, d = prop-cur;
-  document.getElementById("tCur").textContent = fmt(cur);
-  document.getElementById("tNew").textContent = fmt(prop);
-  const tDiff = document.getElementById("tDiff");
-  tDiff.textContent = (d>=0?"+":"−")+"$"+Math.round(Math.abs(d)).toLocaleString();
-  tDiff.className = "value "+(d>=0?"pos":"neg");
-  const mins = g("tMin");
-  const rh = (Math.floor(mins/15)+(mins%15>=7?1:0))*0.25;
-  document.getElementById("tHrs").textContent = rh.toFixed(2);
-  document.getElementById("tBill").textContent = "$"+(rh*rate).toFixed(2);
-  document.getElementById("tRate").textContent = "$"+rate;
-  const fee = g("tFee")||75;
-  document.getElementById("tFee2").textContent = "$"+fee+" concierge fee";
-  document.getElementById("tFee3").textContent = "$"+fee+" fee";
-  document.getElementById("tWaste").textContent = "$"+Math.round(2*rate);
-
-  // Key numbers
-  document.getElementById("kCost").textContent = fmt(cost);
-  document.getElementById("kLaborPct").textContent = Math.round(laborPct)+"%";
-  document.getElementById("kLabor").textContent = fmt(labor);
-  document.getElementById("kFuelPct").textContent = Math.round(fuelPct)+"%";
-  document.getElementById("kFuel").textContent = fmt(fuel);
-
-  // Operations: buffer grid + cost impact
-  document.getElementById("bufferGrid").innerHTML = DAYS.map(d=>{
-    const buf=d[7], st = buf<30?["CRITICAL","b-red","#fee2e2"]:buf<60?["TIGHT","b-yel","#fef3c7"]:["ABSORB","b-grn","#dcfce7"];
-    return `<div style="background:${st[2]};border-radius:10px;padding:10px 6px;text-align:center"><div style="font-weight:700;font-size:13px">Day ${d[0]}</div><div style="font-size:22px;font-weight:800">${buf}</div><div style="font-size:10px;color:var(--muted)">min buffer</div><div style="margin-top:6px"><span class="badge ${st[1]}" style="font-size:10px">${st[0]}</span></div></div>`;
-  }).join("");
-  const sameLo = Math.round(3*mile), sameHi = Math.round(5*mile);
-  const diffC = Math.round(12*mile + 0.25*rate);
-  const alone = Math.round(30*mile + 2*rate);
-  const otHr = Math.round(rate*0.5);
-  const card = (title,rows,total,tcls)=>`<div class="step"><h4>${title}</h4>${rows}<div style="border-top:1px solid var(--line);margin-top:8px;padding-top:8px;display:flex;justify-content:space-between"><strong>Total</strong><strong class="${tcls}" style="font-size:18px">${total}</strong></div></div>`;
-  document.getElementById("costImpact").innerHTML =
-    card("Same-cluster day",
-      `<p>Extra miles to existing route: ~3 mi</p><p>Fuel: 3 × $${mile} = $${(3*mile).toFixed(2)}</p><p class="pos"><strong>Extra labor: $0 (already working)</strong></p>`,
-      "+$"+sameLo+"–"+sameHi, "pos")+
-    card("Different cluster",
-      `<p>Detour miles: ~12 mi</p><p>Fuel: 12 × $${mile} = $${(12*mile).toFixed(2)}</p><p>Extra time: 0.25 hrs × $${rate} = $${(0.25*rate).toFixed(2)}</p>`,
-      "+$"+diffC, "")+
-    card("Standalone trip (worst case)",
-      `<p>Round trip: ~30 mi</p><p>Fuel: 30 × $${mile} = $${(30*mile).toFixed(2)}</p><p>Labor: 2 hrs × $${rate} = $${(2*rate).toFixed(2)}</p>`,
-      "+$"+alone, "neg")+
-    card("Authorize overtime",
-      `<p>Regular rate: $${rate}/hr</p><p>OT rate: $${rate} × 1.5 = $${(rate*1.5).toFixed(2)}/hr</p><p>Incremental cost per OT hour: $${(rate*0.5).toFixed(2)}</p>`,
-      "+$"+otHr+"/hr", "");
-  document.getElementById("impactBottom").innerHTML = `<strong>Bottom line:</strong> route-optimized rescheduling costs <strong>+$${sameLo}–${sameHi}</strong>. A standalone trip costs <strong>+$${alone}</strong>. That's why we match clusters, not just buffer.`;
-  const inp = (l,v)=>`<div class="kpi" style="padding:10px"><div class="label">${l}</div><div class="value" style="font-size:18px;color:var(--accent)">${v}</div></div>`;
-  document.getElementById("calcInputs").innerHTML =
-    inp("Hourly rate","$"+rate)+inp("Cost / mile","$"+mile)+inp("OT multiplier","1.5×")+inp("Avg service time","1.5 hrs");
-
-  drawSplit(); drawDays(); drawVol();
-}
-
-let splitChart=null, daysChart=null, scenChart=null, volChart=null;
-function mkChart(id, cfg){
-  if(typeof Chart==="undefined") return;
-  if(charts[id]) charts[id].destroy();
-  charts[id] = new Chart(document.getElementById(id), cfg);
-}
-function drawSplit(){
-  mkChart("chSplit",{type:"doughnut",
-    data:{labels:["Labor ("+Math.round(S.laborPct)+"%)","Fuel ("+Math.round(S.fuelPct)+"%)"],
-    datasets:[{data:[S.labor,S.fuel],backgroundColor:["#1d4ed8","#93c5fd"]}]},
-    options:{maintainAspectRatio:false,plugins:{legend:{position:"bottom"}}}});
-}
-function drawDays(){
-  mkChart("chDays",{type:"bar",
-    data:{labels:DAYS.map(d=>"Day "+d[0]),
-    datasets:[{label:"Travel min",data:DAYS.map(d=>d[3]),backgroundColor:"#93c5fd"},
-              {label:"Service min",data:DAYS.map(d=>d[4]),backgroundColor:"#1d4ed8"}]},
-    options:{maintainAspectRatio:false,scales:{x:{stacked:true},y:{stacked:true}},plugins:{legend:{position:"bottom"}}}});
-}
-function drawScen(base,spd,lux,cap){
-  const sc=[base,spd,lux,cap];
-  mkChart("chScen",{type:"bar",
-    data:{labels:sc.map(s=>s.label),
-    datasets:[{label:"Labor",data:sc.map(s=>s.labor),backgroundColor:"#1d4ed8"},
-              {label:"Fuel",data:sc.map(s=>s.fuel),backgroundColor:"#93c5fd"}]},
-    options:{maintainAspectRatio:false,indexAxis:"y",scales:{x:{stacked:true},y:{stacked:true}},
-      plugins:{legend:{position:"bottom"},
-        tooltip:{callbacks:{footer:items=>{const s=sc[items[0].dataIndex];return "Total "+fmt(s.total)+" ("+sgn(s.total-S.cost)+" vs base)";}}}}}});
-}
-function drawVol(){
-  const sorted=[...CUSTOMERS].sort((a,b)=>b[1]-a[1]);
-  mkChart("chVol",{type:"bar",
-    data:{labels:sorted.map(c=>c[0].replace("CUST","C")),
-    datasets:[{label:"cu ft",data:sorted.map(c=>c[1]),backgroundColor:sorted.map(c=>c[2]==="Local"?"#1d4ed8":"#f59e0b")}]},
-    options:{maintainAspectRatio:false,indexAxis:"y",plugins:{legend:{display:false}}}});
-}
-function drawMap(){
-  const cv=document.getElementById("chMap"); if(!cv) return;
-  const ctx=cv.getContext("2d");
-  const W=cv.parentElement.clientWidth, H=380, dpr=window.devicePixelRatio||1;
-  cv.width=W*dpr; cv.height=H*dpr; cv.style.width=W+"px"; cv.style.height=H+"px";
-  ctx.scale(dpr,dpr);
-  const lats=GEO.map(g=>g[1]), lngs=GEO.map(g=>g[2]), pad=40;
-  const x=lng=>pad+(lng-Math.min(...lngs))/(Math.max(...lngs)-Math.min(...lngs))*(W-2*pad);
-  const y=lat=>pad+(Math.max(...lats)-lat)/(Math.max(...lats)-Math.min(...lats))*(H-2*pad);
-  const LO={CUST3301:[10,-12],CUST6699:[10,16],CUST2424:[-8,-12],CUST7026:[-8,16],CUST9119:[10,2],CUST7395:[10,-12],CUST9189:[10,16],CUST2508:[10,-12],CUST1946:[10,4],CUST4928:[-34,4],CUST6446:[-8,-12],CUST1699:[10,4],CUST6536:[10,4]};
-  const route = DAYS.find(d=>d[0]===selDay)[8];
-  // route polyline
-  ctx.strokeStyle="#1d4ed8"; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.beginPath();
-  const pts=[GEO[0],...route.map(id=>GEO.find(g=>g[0]===id)),GEO[0]];
-  pts.forEach((g,i)=>{ const px=x(g[2]),py=y(g[1]); i?ctx.lineTo(px,py):ctx.moveTo(px,py); });
-  ctx.stroke(); ctx.setLineDash([]);
-  GEO.forEach(g=>{
-    const [name,lat,lng,cluster,color]=g, px=x(lng), py=y(lat);
-    const onRoute = cluster==="Hub" || route.includes(name);
-    ctx.globalAlpha = onRoute?1:0.25;
-    if(cluster==="Hub"){ ctx.fillStyle=color; ctx.fillRect(px-7,py-7,14,14);
-      ctx.fillStyle="#111827"; ctx.font="bold 11px sans-serif"; ctx.fillText("WAREHOUSE",px+10,py+4);
-    } else {
-      ctx.beginPath(); ctx.arc(px,py,onRoute?8:6,0,7); ctx.fillStyle=color; ctx.fill();
-      ctx.lineWidth=2; ctx.strokeStyle="#fff"; ctx.stroke();
-      if(onRoute){ ctx.fillStyle="#374151"; ctx.font="bold 11px sans-serif";
-        const o=LO[name]||[10,4]; ctx.fillText(name.replace("CUST","C"),px+o[0],py+o[1]); }
-    }
-    ctx.globalAlpha=1;
-  });
-  document.getElementById("mapLegend").innerHTML =
-    CLUSTERS.map(c=>`<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c[3]};margin-right:4px"></span>${c[0]}</span>`).join("");
-}
-
-(function init(){
-  document.getElementById("tabs").innerHTML = TABS.map(t=>
-    `<button data-tab="${t[0]}" class="${t[0]==="executive"?"active":""}" onclick="showTab('${t[0]}')">${t[1]}</button>`).join("");
-  document.getElementById("dayBtns").innerHTML = DAYS.map(d=>
-    `<button class="btn ${d[0]===1?"":"ghost"}" data-day="${d[0]}" onclick="selDay=${d[0]};document.querySelectorAll('#dayBtns .btn').forEach(b=>b.classList.toggle('ghost',+b.dataset.day!==${d[0]}));drawMap()">Day ${d[0]}</button>`).join("");
-  document.getElementById("clusters").innerHTML = CLUSTERS.map(c=>
-    `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f9fafb;border:1px solid var(--line);border-radius:8px"><span style="width:12px;height:12px;border-radius:50%;background:${c[3]}"></span><strong style="font-size:14px">${c[0]}</strong><span style="color:var(--muted);font-size:13px;margin-left:auto">${c[1]} customers · ${c[2]} avg from warehouse</span></div>`).join("");
-  recompute();
-  drawMap();
-})();
-</script>
 </body>
 </html>
