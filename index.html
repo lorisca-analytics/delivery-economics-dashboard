@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Delivery Economics Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root { --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb; --accent:#1d4ed8; --red:#b91c1c; --green:#15803d; --bg:#f6f7f9; --card:#ffffff; }
+  * { box-sizing:border-box; }
+  body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; margin:0; background:var(--bg); color:var(--ink); }
+  header.top { background:#111827; color:#fff; padding:28px 32px 22px; }
+  header.top h1 { margin:0 0 6px; font-size:24px; font-weight:700; }
+  header.top p { margin:0; color:#9ca3af; font-size:14px; }
+  .chip { display:inline-block; margin-top:12px; background:#1f2937; border:1px solid #374151; color:#d1d5db; font-size:12px; padding:6px 12px; border-radius:999px; }
+  .wrap { max-width:1100px; margin:0 auto; padding:24px 20px 60px; }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin:20px 0 28px; }
+  .kpi { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 16px; }
+  .kpi .label { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:6px; }
+  .kpi .value { font-size:24px; font-weight:700; }
+  .kpi .sub { font-size:12px; color:var(--muted); margin-top:4px; }
+  .neg { color:var(--red); } .pos { color:var(--green); }
+  section.card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:22px 24px; margin-bottom:20px; }
+  section.card h2 { margin:0 0 4px; font-size:18px; }
+  section.card .deck { margin:0 0 16px; color:var(--muted); font-size:14px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th, td { text-align:left; padding:9px 10px; border-bottom:1px solid var(--line); }
+  th { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); font-weight:600; }
+  tr:last-child td { border-bottom:none; }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .chartbox { position:relative; height:260px; margin-top:8px; }
+  .levers { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px; }
+  .lever { border:1px solid var(--line); border-radius:10px; padding:16px; }
+  .lever h3 { margin:0 0 6px; font-size:15px; }
+  .lever p { margin:6px 0; font-size:13px; color:var(--muted); }
+  .lever .delta { font-size:20px; font-weight:700; }
+  .verdict { display:inline-block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; padding:3px 10px; border-radius:999px; margin-top:8px; }
+  .verdict.no { background:#fee2e2; color:var(--red); } .verdict.yes { background:#dcfce7; color:var(--green); }
+  .calc { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin-top:8px; }
+  .calc .field label { display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
+  .calc input, .calc select { width:100%; padding:10px 12px; font-size:15px; border:1px solid var(--line); border-radius:8px; }
+  .priceout { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px; }
+  .priceout div { border:1px solid var(--line); border-radius:10px; padding:14px; }
+  .priceout .big { font-size:26px; font-weight:700; }
+  .policy { background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:14px 16px; font-size:14px; margin-top:14px; }
+  #settings { display:none; }
+  #settings.open { display:block; }
+  .settingsgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; }
+  .settingsgrid label { display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
+  .settingsgrid input { width:100%; padding:9px 11px; font-size:14px; border:1px solid var(--line); border-radius:8px; }
+  .btn { background:var(--accent); color:#fff; border:none; border-radius:8px; padding:10px 18px; font-size:14px; cursor:pointer; }
+  .btn.ghost { background:#fff; color:var(--ink); border:1px solid var(--line); }
+  footer { color:var(--muted); font-size:12px; margin-top:28px; line-height:1.6; }
+  .note { font-size:12px; color:var(--muted); margin-top:10px; }
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>Delivery Economics Dashboard</h1>
+  <p>White-glove furniture delivery · 13 customers · Bay Area · 7-day schedule · 21 truckloads</p>
+  <span class="chip">Service standard is fixed: no split orders · full install + staging + cleanup</span>
+  <span style="float:right"><button class="btn ghost" style="background:transparent;color:#d1d5db;border-color:#4b5563" onclick="document.getElementById('settings').classList.toggle('open')">Settings</button></span>
+</header>
+<div class="wrap">
+
+  <section class="card" id="settings">
+    <h2>Settings</h2>
+    <p class="deck">Change an assumption, watch the economics move. Defaults are the case-documented values.</p>
+    <div class="settingsgrid">
+      <div><label>Crew rate ($/hr, fully loaded)</label><input type="number" id="inRate" value="104" step="0.5" oninput="recompute()"></div>
+      <div><label>Cost per mile ($)</label><input type="number" id="inMile" value="1.21" step="0.01" oninput="recompute()"></div>
+      <div><label>Local flat fee ($)</label><input type="number" id="inLocal" value="299" step="1" oninput="recompute()"></div>
+      <div><label>Extended flat fee ($)</label><input type="number" id="inExt" value="399" step="1" oninput="recompute()"></div>
+      <div><label>Labor hours (verified)</label><input type="number" id="inHours" value="53.5" step="0.1" oninput="recompute()"></div>
+      <div><label>Miles (verified)</label><input type="number" id="inMiles" value="396" step="1" oninput="recompute()"></div>
+    </div>
+  </section>
+
+  <div class="kpis" id="kpis"></div>
+
+  <section class="card">
+    <h2>Daily operations</h2>
+    <p class="deck">What the crew actually does, day by day. Minutes are scheduled time; the P&amp;L above uses verified totals (53.5 hrs, 396 mi).</p>
+    <table id="schedTable">
+      <thead><tr><th>Day</th><th>Loads</th><th class="num">Travel min</th><th class="num">Service min</th><th class="num">Total min</th><th class="num">Miles</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="chartbox"><canvas id="chDays"></canvas></div>
+    <div class="policy"><strong>Concierge rescheduling policy:</strong> first reschedule free · $75 for same-day changes after that · no-show rebooked to the next available window. Framed as service, priced to cover the wasted trip.</div>
+  </section>
+
+  <section class="card">
+    <h2>Unit economics</h2>
+    <p class="deck" id="econDeck">Unit economics, allocated by volume.</p>
+    <div class="chartbox" style="height:220px"><canvas id="chSplit"></canvas></div>
+    <table id="pnlTable" style="margin-top:12px">
+      <thead><tr><th>Customer</th><th>Zone</th><th class="num">Volume (cu ft)</th><th class="num">Cost</th><th class="num">Fee paid</th><th class="num">P&amp;L</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <p class="note">Cost = volume × $0.2292/cu ft (total cost ÷ total volume). Assumption stated, not hidden.</p>
+  </section>
+
+  <section class="card">
+    <h2>Pricing decision</h2>
+    <p class="deck">The flat fee ignores order size. Test any order volume against the proposed formula.</p>
+    <div class="calc">
+      <div class="field"><label>Order volume (cu ft)</label><input type="number" id="calcVol" value="1500" oninput="priceCalc()"></div>
+      <div class="field"><label>Zone</label><select id="calcZone" onchange="priceCalc()"><option value="local">Local</option><option value="extended" selected>Extended</option></select></div>
+    </div>
+    <div class="priceout">
+      <div><div class="label" style="font-size:11px;color:var(--muted)">CURRENT FLAT FEE</div><div class="big" id="curFee">–</div></div>
+      <div><div class="label" style="font-size:11px;color:var(--muted)">PROPOSED: $150 + $0.25 / CU FT</div><div class="big" id="newFee" style="color:var(--accent)">–</div></div>
+    </div>
+    <p class="note" id="breakevenNote">Breakeven on the current book needs +$88.94 per delivery.</p>
+  </section>
+
+  <section class="card">
+    <h2>Investment levers</h2>
+    <p class="deck">Three alternatives tested against the base case. Only one beats it — and the luxury option has a price tag worth knowing.</p>
+    <div class="levers">
+      <div class="lever"><h3>Two trucks</h3><p>Parallel crews, done in 4 days instead of 7.</p><div class="delta neg" id="lvSpeed">–</div><p>vs base case</p><span class="verdict no">Rejected</span></div>
+      <div class="lever"><h3>Luxury pace</h3><p>Two loads a day, the full premium experience.</p><div class="delta neg" id="lvLux">–</div><p>vs base case</p><span class="verdict no">Rejected — but this is the price tag of the brand promise at its extreme</span></div>
+      <div class="lever"><h3>Bigger truck</h3><p>2,000 cu ft capacity: 14 loads instead of 21, ~5 days.</p><div class="delta pos" id="lvCap">–</div><p>vs base case · <strong class="pos" id="lvCapProfit">–</strong></p><span class="verdict yes">The operational lever</span></div>
+    </div>
+  </section>
+
+  <footer>
+    Built from 171 order lines across 13 customers, a 45-SKU item master, and case-documented operating parameters.
+    Crew rate restated at $104/hr (driver premium + benefits, per the case); the submitted version used $97.50 with the premium omitted — the loss moved from $808 to $1,156 and the thesis held.
+    Distances estimated at 25 mph, no traffic modeling. Companion case study: <em>Pricing, Not Routing</em>.
+  </footer>
+</div>
+<script>
+const CUSTOMERS = [
+  ["CUST3301",3969.9,"Extended"],["CUST6536",3669.2,"Extended"],["CUST6699",3286.7,"Extended"],
+  ["CUST6446",2228.5,"Local"],["CUST1699",2198.4,"Local"],["CUST7026",2443.2,"Extended"],
+  ["CUST1946",2282.5,"Extended"],["CUST9189",1990.5,"Extended"],["CUST9119",1481.7,"Extended"],
+  ["CUST2424",1304.7,"Extended"],["CUST4928",831.5,"Local"],["CUST7395",405.7,"Extended"],["CUST2508",276.3,"Extended"]
+];
+const DAYS = [
+  [1,"Tue","7, 13, 15",141,396,537,58.6],[2,"Wed","3, 19, 21",169,348,517,70.6],
+  [3,"Thu","1, 14, 20",189,341,530,78.6],[4,"Fri","2, 4, 5",141,352,493,58.8],
+  [5,"Sat","6, 11, 8",135,306,441,69.0],[6,"Tue","12, 9, 16",125,310,435,69.0],
+  [7,"Wed","10, 17, 18",96,345,441,34.0]
+];
+const TOTAL_VOL = 26368.86, N_LOCAL = 3, N_EXT = 10;
+const fmt = n => "$" + Math.round(n).toLocaleString("en-US");
+let S = {};
+function recompute(){
+  const rate = +document.getElementById("inRate").value || 104;
+  const mile = +document.getElementById("inMile").value || 1.21;
+  const local = +document.getElementById("inLocal").value || 299;
+  const ext = +document.getElementById("inExt").value || 399;
+  const hrs = +document.getElementById("inHours").value || 53.5;
+  const mi = +document.getElementById("inMiles").value || 396;
+  const labor = hrs*rate, fuel = mi*mile, cost = labor+fuel;
+  const rev = N_LOCAL*local + N_EXT*ext, pnl = rev-cost, margin = pnl/rev*100;
+  const perUnit = cost/TOTAL_VOL, perDel = cost/13, inc = -pnl/13;
+  S = {rate,mile,local,ext,hrs,mi,labor,fuel,cost,rev,pnl,margin,perUnit,perDel,inc};
+  document.getElementById("kpis").innerHTML = [
+    ["Total cost",fmt(cost),"labor "+fmt(labor)+" · fuel "+fmt(fuel),""],
+    ["Revenue",fmt(rev),N_LOCAL+" local × "+fmt(local)+" · "+N_EXT+" extended × "+fmt(ext),""],
+    ["Net",fmt(pnl),pnl<0?"loss":"profit",pnl<0?"neg":"pos"],
+    ["Margin",(margin).toFixed(1)+"%","on revenue",""],
+    ["Cost / delivery",fmt(perDel),"13 deliveries",""],
+    ["Labor share",Math.round(labor/cost*100)+"%","of total cost",""]
+  ].map(k=>`<div class="kpi"><div class="label">${k[0]}</div><div class="value ${k[3]}">${k[1]}</div><div class="sub">${k[2]}</div></div>`).join("");
+  const tb = CUSTOMERS.map(c=>{
+    const costC = c[1]*perUnit, fee = c[2]==="Local"?local:ext, p = fee-costC;
+    return {id:c[0],zone:c[2],vol:c[1],cost:costC,fee,p};
+  }).sort((a,b)=>a.p-b.p);
+  const losers = tb.filter(r=>r.p<0).length;
+  document.getElementById("econDeck").textContent =
+    "Cost is allocated by volume — $"+perUnit.toFixed(4)+" per cubic foot. "+losers+" of thirteen customers lose money; the rest subsidize them.";
+  document.getElementById("breakevenNote").textContent =
+    "Breakeven on the current book needs +$"+inc.toFixed(2)+" per delivery (local $"+(local+inc).toFixed(2)+", extended $"+(ext+inc).toFixed(2)+"). The volume formula gets there without punishing small orders: 276 cu ft pays $219, 3,970 cu ft pays $1,143.";
+  const dSpeed = 64*rate+fuel-cost, dLux = 82.5*rate+fuel*1.05-cost, dCap = 37.5*rate+fuel-cost;
+  const capProfit = rev-(37.5*rate+fuel);
+  const sgn = v => (v<0?"−$":"+$")+Math.round(Math.abs(v)).toLocaleString();
+  document.getElementById("lvSpeed").textContent = sgn(dSpeed);
+  document.getElementById("lvLux").textContent = sgn(dLux);
+  document.getElementById("lvCap").textContent = sgn(dCap);
+  document.getElementById("lvCapProfit").textContent = "$"+Math.round(Math.abs(capProfit)).toLocaleString()+(capProfit>=0?" profit":" loss");
+  document.getElementById("lvCapProfit").className = capProfit>=0?"pos":"neg";
+  document.querySelector("#pnlTable tbody").innerHTML = tb.map(r=>
+    `<tr><td>${r.id}</td><td>${r.zone}</td><td class="num">${r.vol.toLocaleString()}</td><td class="num">${fmt(r.cost)}</td><td class="num">${fmt(r.fee)}</td><td class="num ${r.p<0?"neg":"pos"}">${r.p<0?"−$":"+$"}${Math.round(Math.abs(r.p)).toLocaleString()}</td></tr>`).join("");
+  drawSplit(); priceCalc();
+}
+function priceCalc(){
+  const v = +document.getElementById("calcVol").value || 0;
+  const z = document.getElementById("calcZone").value;
+  document.getElementById("curFee").textContent = fmt(z==="local"?S.local:S.ext);
+  document.getElementById("newFee").textContent = fmt(150 + 0.25*v);
+}
+let splitChart=null, daysChart=null;
+function drawSplit(){
+  if(splitChart) splitChart.destroy();
+  splitChart = new Chart(document.getElementById("chSplit"),{type:"doughnut",
+    data:{labels:["Labor ("+Math.round(S.labor/S.cost*100)+"%)","Fuel ("+Math.round(S.fuel/S.cost*100)+"%)"],
+    datasets:[{data:[S.labor,S.fuel],backgroundColor:["#1d4ed8","#93c5fd"]}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{position:"bottom"}}}});
+}
+(function init(){
+  document.querySelector("#schedTable tbody").innerHTML = DAYS.map(d=>
+    `<tr><td>Day ${d[0]} <span style="color:var(--muted)">${d[1]}</span></td><td style="color:var(--muted)">${d[2]}</td><td class="num">${d[3]}</td><td class="num">${d[4]}</td><td class="num">${d[5]}</td><td class="num">${d[6]}</td></tr>`).join("");
+  daysChart = new Chart(document.getElementById("chDays"),{type:"bar",
+    data:{labels:DAYS.map(d=>"Day "+d[0]),
+    datasets:[{label:"Travel min",data:DAYS.map(d=>d[3]),backgroundColor:"#93c5fd"},
+              {label:"Service min",data:DAYS.map(d=>d[4]),backgroundColor:"#1d4ed8"}]},
+    options:{maintainAspectRatio:false,scales:{x:{stacked:true},y:{stacked:true}},plugins:{legend:{position:"bottom"}}}});
+  recompute();
+})();
+</script>
+</body>
+</html>
