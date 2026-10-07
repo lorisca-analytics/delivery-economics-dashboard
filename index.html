@@ -194,6 +194,7 @@ function priceCalc(){
 }
 let splitChart=null, daysChart=null;
 function drawSplit(){
+  if (typeof Chart === "undefined") return;
   if(splitChart) splitChart.destroy();
   splitChart = new Chart(document.getElementById("chSplit"),{type:"doughnut",
     data:{labels:["Labor ("+Math.round(S.labor/S.cost*100)+"%)","Fuel ("+Math.round(S.fuel/S.cost*100)+"%)"],
@@ -203,7 +204,7 @@ function drawSplit(){
 (function init(){
   document.querySelector("#schedTable tbody").innerHTML = DAYS.map(d=>
     `<tr><td>Day ${d[0]} <span style="color:var(--muted)">${d[1]}</span></td><td style="color:var(--muted)">${d[2]}</td><td class="num">${d[3]}</td><td class="num">${d[4]}</td><td class="num">${d[5]}</td><td class="num">${d[6]}</td></tr>`).join("");
-  daysChart = new Chart(document.getElementById("chDays"),{type:"bar",
+  if (typeof Chart !== "undefined") daysChart = new Chart(document.getElementById("chDays"),{type:"bar",
     data:{labels:DAYS.map(d=>"Day "+d[0]),
     datasets:[{label:"Travel min",data:DAYS.map(d=>d[3]),backgroundColor:"#93c5fd"},
               {label:"Service min",data:DAYS.map(d=>d[4]),backgroundColor:"#1d4ed8"}]},
