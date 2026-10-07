@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="520" viewBox="0 0 1200 520" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+  <defs>
+    <style>
+      .title { font-size:22px; font-weight:700; fill:#111827; }
+      .subtitle { font-size:14px; fill:#6b7280; }
+      .box { fill:#ffffff; stroke:#e5e7eb; stroke-width:1.5; rx:12; }
+      .letter { font-size:26px; font-weight:800; fill:#1d4ed8; }
+      .head { font-size:13px; font-weight:700; fill:#111827; }
+      .body { font-size:12px; fill:#4b5563; }
+      .band { fill:#eff6ff; stroke:#bfdbfe; stroke-width:1.5; }
+      .bandtext { font-size:13px; font-weight:600; fill:#1e40af; }
+      .arrow { stroke:#9ca3af; stroke-width:2; fill:none; marker-end:url(#ah); }
+    </style>
+    <marker id="ah" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="none" stroke="#9ca3af" stroke-width="2"/></marker>
+  </defs>
+  <rect width="1200" height="520" fill="#f6f7f9"/>
+  <text x="40" y="44" class="title">SPIDER × Business Context</text>
+  <text x="40" y="66" class="subtitle">How the portfolio method frames this project — each section answers one business question.</text>
+
+  <rect x="40" y="88" width="1120" height="52" rx="10" class="band"/>
+  <text x="60" y="119" class="bandtext">Fixed business constraint across all six: the white-glove promise — no split orders · full install + staging · memorable experience</text>
+
+  <g id="spider">
+    <!-- S -->
+    <rect x="40" y="170" width="172" height="300" rx="12" class="box"/>
+    <text x="60" y="210" class="letter">S</text>
+    <text x="60" y="234" class="head">Summary</text>
+    <text x="60" y="258" class="body"><tspan x="60" dy="0">The elevator pitch:</tspan><tspan x="60" dy="18">$1,156 loss on 13</tspan><tspan x="60" dy="18">orders. The fix is</tspan><tspan x="60" dy="18">pricing, not routing.</tspan></text>
+    <text x="60" y="352" class="body"><tspan x="60" dy="0" font-style="italic">Answers:</tspan><tspan x="60" dy="18">what did you do,</tspan><tspan x="60" dy="18">what did you find?</tspan></text>
+    <!-- P -->
+    <rect x="228" y="170" width="172" height="300" rx="12" class="box"/>
+    <text x="248" y="210" class="letter">P</text>
+    <text x="248" y="234" class="head">Problem</text>
+    <text x="248" y="258" class="body"><tspan x="248" dy="0">Flat fee ignores order</tspan><tspan x="248" dy="18">size: $399 for 276</tspan><tspan x="248" dy="18">cu ft and $399 for</tspan><tspan x="248" dy="18">3,970 cu ft.</tspan></text>
+    <text x="248" y="352" class="body"><tspan x="248" dy="0" font-style="italic">Answers:</tspan><tspan x="248" dy="18">why does this matter,</tspan><tspan x="248" dy="18">who has this problem?</tspan></text>
+    <!-- I -->
+    <rect x="416" y="170" width="172" height="300" rx="12" class="box"/>
+    <text x="436" y="210" class="letter">I</text>
+    <text x="436" y="234" class="head">Inputs</text>
+    <text x="436" y="258" class="body"><tspan x="436" dy="0">171 order lines,</tspan><tspan x="436" dy="18">45-SKU item master,</tspan><tspan x="436" dy="18">zone mapping, case</tspan><tspan x="436" dy="18">parameters.</tspan></text>
+    <text x="436" y="352" class="body"><tspan x="436" dy="0" font-style="italic">Answers:</tspan><tspan x="436" dy="18">what data, from</tspan><tspan x="436" dy="18">where, how much?</tspan></text>
+    <!-- D -->
+    <rect x="604" y="170" width="172" height="300" rx="12" class="box"/>
+    <text x="624" y="210" class="letter">D</text>
+    <text x="624" y="234" class="head">Discovery</text>
+    <text x="624" y="258" class="body"><tspan x="624" dy="0">Volume binds before</tspan><tspan x="624" dy="18">weight. 3 customers</tspan><tspan x="624" dy="18">drive 41%. Audit</tspan><tspan x="624" dy="18">caught 3 of my own</tspan><tspan x="624" dy="18">errors.</tspan></text>
+    <text x="624" y="368" class="body"><tspan x="624" dy="0" font-style="italic">Answers:</tspan><tspan x="624" dy="18">what surprised you,</tspan><tspan x="624" dy="18">what didn't work?</tspan></text>
+    <!-- E -->
+    <rect x="792" y="170" width="172" height="300" rx="12" class="box"/>
+    <text x="812" y="210" class="letter">E</text>
+    <text x="812" y="234" class="head">Execution</text>
+    <text x="812" y="258" class="body"><tspan x="812" dy="0">Minimize cost under</tspan><tspan x="812" dy="18">the service promise.</tspan><tspan x="812" dy="18">21 loads, 7 days.</tspan><tspan x="812" dy="18">3 alternatives tested.</tspan></text>
+    <text x="812" y="352" class="body"><tspan x="812" dy="0" font-style="italic">Answers:</tspan><tspan x="812" dy="18">what method, why,</tspan><tspan x="812" dy="18">what was rejected?</tspan></text>
+    <!-- R -->
+    <rect x="980" y="170" width="172" height="300" rx="12" class="box"/>
+    <text x="1000" y="210" class="letter">R</text>
+    <text x="1000" y="234" class="head">Results</text>
+    <text x="1000" y="258" class="body"><tspan x="1000" dy="0">−$1,156 margin.</tspan><tspan x="1000" dy="18">Volume pricing:</tspan><tspan x="1000" dy="18">$150 + $0.25/cu ft.</tspan><tspan x="1000" dy="18">Bigger truck: +$508.</tspan></text>
+    <text x="1000" y="352" class="body"><tspan x="1000" dy="0" font-style="italic">Answers:</tspan><tspan x="1000" dy="18">so what, what</tspan><tspan x="1000" dy="18">should change?</tspan></text>
+  </g>
+  <line x1="212" y1="320" x2="228" y2="320" class="arrow"/>
+  <line x1="400" y1="320" x2="416" y2="320" class="arrow"/>
+  <line x1="588" y1="320" x2="604" y2="320" class="arrow"/>
+  <line x1="776" y1="320" x2="792" y2="320" class="arrow"/>
+  <line x1="964" y1="320" x2="980" y2="320" class="arrow"/>
+</svg>
