@@ -24,7 +24,7 @@ This started as my MBA Global Operations final assignment (86/100, with the Exce
 - **The luxury promise is fixed.** No split orders, no rushed crews, full install + staging. That's why cost-only optimization was never the answer.
 - **Bigger truck is the operational lever.** The original verdict said it "doesn't reach breakeven" — its own math showed a $508 profit. Corrected.
 
-![Unit economics](screenshots/unit-economics.png)
+![Unit economics](screenshots/unit-economics.jpg)
 
 ## Flow
 
